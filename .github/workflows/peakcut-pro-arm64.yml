@@ -1,0 +1,31 @@
+name: PeakCut Pro ARM64
+on:
+  push:
+    branches: [main, feature/peakcut-pro-windsor-followup]
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  native-arm64:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify native architecture and build the application
+        run: |
+          test "$(uname -m)" = aarch64
+          docker build -t peakcut-pro-arm64:test .
+      - name: Run isolated application and video tests
+        run: |
+          # Production images intentionally exclude .git. The version-notice tests,
+          # however, need a commit identifier. Supply only a fake detached HEAD,
+          # never the checkout's .git directory (which may contain credentials).
+          mkdir -p "$RUNNER_TEMP/peakcut-test-git"
+          git rev-parse HEAD > "$RUNNER_TEMP/peakcut-test-git/HEAD"
+          docker run --rm --network none --cpus 2 --memory 8g \
+            -e PEAKCUT_TEST_CONTAINER=1 -e PEAKCUT_FETCH_MODEL=0 -e PEAKCUT_DATA=/tmp/peakcut-arm-test \
+            -v "$PWD/tests:/app/tests:ro" \
+            -v "$RUNNER_TEMP/peakcut-test-git:/app/.git:ro" \
+            peakcut-pro-arm64:test python tests/run.py

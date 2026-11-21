@@ -1,0 +1,48 @@
+{
+  "architecture": "x86_64",
+  "cores": 2,
+  "mode": "balanced",
+  "revision": "e1157c2ee5339581ff2ec46e60d4065b9109ef35",
+  "ffmpeg": "ffmpeg version 7.1.5-0+deb13u1 Copyright (c) 2000-2026 the FFmpeg developers",
+  "source": "sintel-full.mkv",
+  "layout": "blur",
+  "trials": [
+    {
+      "asr_input_seconds": 100.0,
+      "asr_cold_seconds": 24.946165801999996,
+      "word_count": 0,
+      "asr_warm_seconds": 19.42703650400017,
+      "word_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "audio_seconds": 5.20726185400008,
+      "render_seconds": 10.83069137199982,
+      "total_seconds": 60.41842182599976,
+      "cold_pipeline_seconds": 40.984119027999895,
+      "cpu_seconds": 112.961709,
+      "cpu_percent_allocated": 93.4828365141022,
+      "process_peak_rss_kib": 1385288,
+      "disk_bytes": 30027580,
+      "mp4_bytes": 1574318,
+      "width": 1080,
+      "height": 1920,
+      "duration": 8.0
+    }
+  ],
+  "median": {
+    "asr_input_seconds": 100.0,
+    "asr_cold_seconds": 24.946165801999996,
+    "word_count": 0,
+    "asr_warm_seconds": 19.42703650400017,
+    "audio_seconds": 5.20726185400008,
+    "render_seconds": 10.83069137199982,
+    "total_seconds": 60.41842182599976,
+    "cold_pipeline_seconds": 40.984119027999895,
+    "cpu_seconds": 112.961709,
+    "cpu_percent_allocated": 93.4828365141022,
+    "process_peak_rss_kib": 1385288,
+    "disk_bytes": 30027580,
+    "mp4_bytes": 1574318,
+    "width": 1080,
+    "height": 1920,
+    "duration": 8.0
+  }
+}
