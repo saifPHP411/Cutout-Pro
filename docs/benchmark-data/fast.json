@@ -1,0 +1,67 @@
+{
+  "architecture": "x86_64",
+  "cores": 2,
+  "mode": "fast",
+  "revision": "e1157c2ee5339581ff2ec46e60d4065b9109ef35",
+  "ffmpeg": "ffmpeg version 7.1.5-0+deb13u1 Copyright (c) 2000-2026 the FFmpeg developers",
+  "source": "demo-bounce.mp4",
+  "layout": "blur",
+  "trials": [
+    {
+      "audio_seconds": 0.11039142400022683,
+      "render_seconds": 1.0203681250000045,
+      "total_seconds": 1.1307639220003693,
+      "cold_pipeline_seconds": 1.1307595490002313,
+      "cpu_seconds": 1.6714769999999999,
+      "cpu_percent_allocated": 73.90919392984728,
+      "process_peak_rss_kib": 148036,
+      "disk_bytes": 607107,
+      "mp4_bytes": 436574,
+      "width": 540,
+      "height": 960,
+      "duration": 4.6
+    },
+    {
+      "audio_seconds": 0.0799920189997465,
+      "render_seconds": 0.8995215489999282,
+      "total_seconds": 0.9795172690000982,
+      "cold_pipeline_seconds": 0.9795135679996747,
+      "cpu_seconds": 1.355811,
+      "cpu_percent_allocated": 69.2081213322572,
+      "process_peak_rss_kib": 148084,
+      "disk_bytes": 607107,
+      "mp4_bytes": 436574,
+      "width": 540,
+      "height": 960,
+      "duration": 4.6
+    },
+    {
+      "audio_seconds": 0.09381330999985948,
+      "render_seconds": 0.883316298000409,
+      "total_seconds": 0.9771344929999941,
+      "cold_pipeline_seconds": 0.9771296080002685,
+      "cpu_seconds": 1.339577,
+      "cpu_percent_allocated": 68.54619346653276,
+      "process_peak_rss_kib": 148400,
+      "disk_bytes": 607107,
+      "mp4_bytes": 436574,
+      "width": 540,
+      "height": 960,
+      "duration": 4.6
+    }
+  ],
+  "median": {
+    "audio_seconds": 0.09381330999985948,
+    "render_seconds": 0.8995215489999282,
+    "total_seconds": 0.9795172690000982,
+    "cold_pipeline_seconds": 0.9795135679996747,
+    "cpu_seconds": 1.355811,
+    "cpu_percent_allocated": 69.2081213322572,
+    "process_peak_rss_kib": 148084,
+    "disk_bytes": 607107,
+    "mp4_bytes": 436574,
+    "width": 540,
+    "height": 960,
+    "duration": 4.6
+  }
+}

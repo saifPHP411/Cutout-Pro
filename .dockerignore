@@ -1,0 +1,11 @@
+.env
+secrets
+data
+.claude
+.git
+tests
+**/__pycache__
+*.bat
+*.md
+
+.env.stage

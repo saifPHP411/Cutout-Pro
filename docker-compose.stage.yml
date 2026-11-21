@@ -1,0 +1,52 @@
+name: peakcut-pro-stage
+services:
+  db:
+    image: postgres:16-alpine
+    mem_limit: 1g
+    environment:
+      POSTGRES_USER: peakcut
+      POSTGRES_PASSWORD: ${STAGE_POSTGRES_PASSWORD:?generate a new staging password}
+      POSTGRES_DB: peakcut_stage
+    volumes:
+      - stage-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U peakcut -d peakcut_stage"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+  app:
+    build: .
+    init: true
+    mem_limit: 8g
+    cpus: 2
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://peakcut:${STAGE_POSTGRES_PASSWORD}@db:5432/peakcut_stage
+      PEAKCUT_PUBLIC_URL: http://127.0.0.1:8766
+      PEAKCUT_ACCOUNTS: "1"
+      PEAKCUT_BACKUP_MAINTENANCE: ${STAGE_BACKUP_MAINTENANCE:-0}
+      PEAKCUT_FFMPEG_THREADS: "2"
+      PEAKCUT_JOB_WORKERS: "1"
+      PEAKCUT_CLIP_WORKERS: "1"
+      PEAKCUT_ASR_THREADS: "2"
+      PEAKCUT_ASR_COPIES: "1"
+      PEAKCUT_MAX_VIDEO_HOURS: "3"
+      PEAKCUT_UPDATE_CHECK: "0"
+      PEAKCUT_FETCH_MODEL: ${STAGE_FETCH_MODEL:-1}
+      PEAKCUT_ALLOW_AUTOPOST: "0"
+      PEAKCUT_AI_KEY: ${STAGE_GEMINI_KEY:-}
+      PEAKCUT_AI_MODELS: ${STAGE_GEMINI_MODEL:-}
+      PEAKCUT_WINDSOR_API_KEY: ${STAGE_WINDSOR_API_KEY:-}
+      PEAKCUT_WINDSOR_YOUTUBE_CHANNEL_ID: ${STAGE_WINDSOR_CHANNEL_ID:-}
+      PEAKCUT_WINDSOR_ACCOUNT_ID: ${STAGE_WINDSOR_ACCOUNT_ID:-}
+      PEAKCUT_WINDSOR_AUTOPULL: ${STAGE_WINDSOR_AUTOPULL:-0}
+    ports:
+      - "127.0.0.1:8766:8765"
+    volumes:
+      - stage-app:/data
+
+volumes:
+  stage-db:
+  stage-app:

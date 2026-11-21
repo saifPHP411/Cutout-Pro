@@ -1,0 +1,4 @@
+/home/agent/.local/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+  from starlette.testclient import TestClient as TestClient  # noqa
+{"trial": 1, "stage_seconds": {"audio": 0.274, "transcribing": 16.709, "analyzing": 0.015, "rendering": 30.878}, "clips": 2, "words": 30, "took_seconds": 48, "export_quality": ["ready", "ready"], "paid_requests": 0}
+{"trial": 2, "stage_seconds": {"audio": 0.326, "analyzing": 0.002, "rendering": 33.039}, "clips": 2, "words": 30, "took_seconds": 34, "export_quality": ["ready", "ready"], "paid_requests": 0}
