@@ -978,6 +978,13 @@ label.ck:has(input:checked){color:var(--text)}
   align-items:center;gap:10px;font-size:12px;color:var(--dim)}
 .clip-score-row progress{width:100%;height:9px;accent-color:var(--brand);background:var(--muted)}
 .clip-score-row b{text-align:right;color:var(--text);font-variant-numeric:tabular-nums}
+
+.clip-browser{display:flex;align-items:end;flex-wrap:wrap;gap:12px;margin:0 0 20px;
+  padding:14px 16px;border:1px solid var(--line);border-radius:16px;background:#211729}
+.clip-browser label{display:grid;gap:6px;min-width:min(100%,180px);font-size:12px;color:var(--dim);font-weight:600}
+.clip-browser select{height:42px;background:#181020;border:1px solid var(--line-2);color:var(--text)}
+.clip-browser .help{margin-left:auto;white-space:nowrap}
+@media(max-width:560px){.clip-browser label{flex:1 1 130px}.clip-browser .help{margin-left:0;width:100%}}
 </style>
 </head>
 <body>
@@ -1220,7 +1227,7 @@ function startTour() {
 
 /* ============================================================ state */
 const S = {status:{styles:{}, layouts:{}}, jobs:[], creators:[], accounts:[], overview:null, settings:null,
-           view:"overview", ctab:"clips"};
+           view:"overview", ctab:"clips", clipSort:"score", clipFilter:"all"};
 const D = {jid:null, cid:null, sig:""};
 const creatorId = () => S.view.startsWith("c:") ? S.view.slice(2) : null;
 const creator = () => S.creators.find(c => c.id === creatorId());
@@ -1415,10 +1422,30 @@ function moveInd() {
 }
 function drawAllClips() {
   const root = $("#allclips"); if (!root) return;
-  const available = S.jobs.flatMap(j => j.clips.map(c => [j, c]));
-  put(root, available.length ? `<div class="grid">${available.slice(0, S.clipLimit).map(([j,c]) => clipHtml(j,c)).join("")}</div>
+  const all = S.jobs.flatMap(j => j.clips.map(c => [j, c]));
+  const available = all.filter(([,c]) => S.clipFilter === "all"
+    || S.clipFilter === "high" && Number(c.score || 0) >= 80
+    || S.clipFilter === "ready" && c.status === "done" && c.qc?.status === "ready"
+    || S.clipFilter === "review" && c.qc?.status === "needs_review");
+  available.sort((a,b) => S.clipSort === "newest" ? (b[0].created || 0) - (a[0].created || 0)
+    : S.clipSort === "shortest" ? (a[1].end - a[1].start) - (b[1].end - b[1].start)
+    : Number(b[1].score || 0) - Number(a[1].score || 0));
+  const browser = `<div class="clip-browser" aria-label="Clip browser filters">
+    <label>Show <select id="clip-filter">
+      <option value="all" ${S.clipFilter === "all" ? "selected" : ""}>All clips</option>
+      <option value="high" ${S.clipFilter === "high" ? "selected" : ""}>High score (80+)</option>
+      <option value="ready" ${S.clipFilter === "ready" ? "selected" : ""}>Ready</option>
+      <option value="review" ${S.clipFilter === "review" ? "selected" : ""}>Needs review</option>
+    </select></label>
+    <label>Sort <select id="clip-sort">
+      <option value="score" ${S.clipSort === "score" ? "selected" : ""}>AI score</option>
+      <option value="newest" ${S.clipSort === "newest" ? "selected" : ""}>Newest video</option>
+      <option value="shortest" ${S.clipSort === "shortest" ? "selected" : ""}>Shortest first</option>
+    </select></label>
+    <span class="help">${available.length} of ${all.length} clips</span></div>`;
+  put(root, browser + (available.length ? `<div class="grid">${available.slice(0, S.clipLimit).map(([j,c]) => clipHtml(j,c)).join("")}</div>
     ${available.length > S.clipLimit ? '<div class="pro-actions"><button class="btn" data-act="moreclips">Show more clips</button></div>' : ""}`
-    : '<p class="help">Clips will appear here when a video has been processed.</p>');
+    : '<p class="help">No clips match this filter yet.</p>'));
 }
 async function loadProView(view) {
   const root = $("#pro-view"); if (!root) return;
@@ -2640,6 +2667,11 @@ function syncCaptionStyle(toggle) {
 }
 document.addEventListener("change", async e => {
   const t = e.target;
+  if (t.id === "clip-filter" || t.id === "clip-sort") {
+    if (t.id === "clip-filter") S.clipFilter = t.value;
+    else S.clipSort = t.value;
+    S.clipLimit = 24; drawAllClips(); return;
+  }
   if (t.id === "o_creator") {
     const toggle = $("#o_captions"), c = S.creators.find(c => c.id === t.value);
     if (!toggle.dataset.overridden) { toggle.checked = c?.captions !== false; syncCaptionStyle(toggle); }
