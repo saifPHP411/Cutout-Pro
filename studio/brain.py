@@ -403,8 +403,8 @@ def _vod_rank(words, lines, z, duration, title, uploader, max_clips, min_len, ma
             ("audio_peak", "loudness peak"), ("spoken_reaction", "spoken reaction"),
             ("chat_burst", "aggregate chat burst"), ("motion_spike", "sampled frame-change spike"))
             if item["signals"].get(key)) or "no strong measured cue"
-        samples.append(f"Candidate {i} ({item['start']:.2f}–{item['end']:.2f}s)\\n"
-                       f"Measured cues: {cues}\\n{transcript}")
+        samples.append(f"Candidate {i} ({item['start']:.2f}–{item['end']:.2f}s)\n"
+                       f"Measured cues: {cues}\n{transcript}")
     prompt = (HEAD.format(title=_safe(title), uploader=_safe(uploader), n=max_clips) + _game_rules(game)
               + "\nRank only candidates with a strong opening and complete payoff. Return the candidate number; timestamps are fixed. "
                 "Prioritize clear setups with funny payoffs, genuine reactions or surprising turns. Chat bursts are supporting evidence only. "
