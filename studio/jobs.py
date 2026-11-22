@@ -916,14 +916,14 @@ def _covers(words: list, start: float, end: float) -> bool:
     return len(inside) >= 25 * minutes and inside[-1]["s"] >= start + 0.85 * (end - start)
 
 
-def _facecam(job) -> list | None:
-    """Where the webcam is in the source: once for the whole video, for every clip of it.
+def _facecam(job, source_path=None) -> list | None:
+    """Find a webcam in a full video or in one downloaded VOD segment.
 
     Only a sure answer is used. A box that is a scoreboard drawn over the game would
     put a picture of a scoreboard in the corner of the clip. One frame is also shown to
     the AI, which tells a person from a game character better than any measurement can;
     what it says is measured again on the picture, so it cannot do any harm."""
-    path = job.get("source_path")
+    path = source_path or job.get("source_path")
     if not path or not Path(path).is_file():
         return None
     try:
@@ -980,6 +980,7 @@ def _process_job(job, pool):
     job.pop("eta_history", None)
     notes = []
     face = False       # where the webcam is in the source, found once; False means not looked for yet
+    face_lock = threading.Lock()  # segment detection may be requested by concurrent clip renders
     usage.set_context(job["creator"], job["title"] or src.get("name"))
     retry_errors = bool(job.pop("retry_errors", False))
     resuming = bool(job.pop("resume", False)) and (d / "words.json").is_file()
@@ -1063,6 +1064,16 @@ def _process_job(job, pool):
     def _make(clip, words_now):
         if src["type"] == "url" and pieces and not (clip.get("src") and Path(clip["src"]).is_file()):
             _fetch_piece(job, clip, audio)
+        # Long VODs are audio-first: the complete source video is never downloaded.
+        # Find the camera from the first fetched clip segment, once per job, rather
+        # than silently losing it because job["source_path"] does not exist.
+        if clip["status"] != "error" and pieces and clip.get("layout") == "gameplay" and not clip.get("facecam"):
+            with face_lock:
+                if not job.get("facecam") and not job.get("_facecam_pieces_checked"):
+                    job["_facecam_pieces_checked"] = True
+                    _facecam(job, clip.get("src"))
+                if job.get("facecam"):
+                    clip["facecam"] = job["facecam"]
         if clip["status"] != "error" and clip.get("captions", True) and yt_model:
             # The clip was found with YouTube's transcript. What is shown on screen comes from our own model,
             # run on just this clip: full punctuation, nothing blanked out, timings to the word.
@@ -1236,7 +1247,7 @@ def _process_job(job, pool):
                 hashtags.apply(c, words, job["title"], job["uploader"], game)
             # Only the gameplay layout uses a webcam, so it is only looked for then, and only once: a
             # stream with no webcam is not looked for again on every clip of it.
-            if o["layout"] == "gameplay" and face is False:
+            if o["layout"] == "gameplay" and face is False and job.get("source_path"):
                 face = _facecam(job)
             if face:
                 c["facecam"] = face
