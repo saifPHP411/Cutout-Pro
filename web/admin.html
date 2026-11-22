@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0E0B14">
 <meta name="robots" content="noindex, nofollow">
 <title>PeakCut Admin</title>
 <link rel="icon" type="image/svg+xml" href="/brand/favicon.svg">
@@ -159,6 +160,57 @@ dialog::backdrop{background:rgba(14,12,11,.42)}
 .fbtop b{color:var(--brand-ink)}
 .fbmsg{white-space:pre-wrap;color:var(--text);line-height:1.6;margin:0 0 10px}
 .fbctx{font-size:12px;color:var(--dim);background:var(--muted);border-radius:8px;padding:8px 10px;margin:0 0 12px;overflow-wrap:anywhere}
+
+
+/* PeakCut Pro — shared burgundy/dark UI tokens */
+:root{
+ --brand:#E7659F;--brand-hi:#F080B3;--brand-press:#F080B3;
+ --brand-ink:#240C1B;--brand-soft:#3A2139;--brand-line:#744464;--brand-deep:#FDB6D5;
+ --ink:#F9EFF8;--deep:#FDB6D5;--soft:#3A2139;--line-b:#744464;
+ --frame:#0E0B14;--frame-2:#211728;--frame-text:#FBF2F9;--frame-dim:#D0B9D0;--frame-line:#3D2A42;
+ --bg:#16101C;--muted:#261A2D;--line:#3C2A43;--line-2:#5B3C59;
+ --text:#F9EFF8;--dim:#D4BFD4;--faint:#B59AB6;
+ --good:#79DEB6;--good-soft:#1C352E;--bad:#FFB0B9;--bad-soft:#45232E;
+ --r-lg:18px;--r:13px;--r-sm:9px;color-scheme:dark;
+}
+::selection{background:#744464;color:#fff}
+:focus-visible{outline:2px solid #FFC1DE;outline-offset:3px}
+:where(input,textarea,select){color:var(--text);background:#1B1223;border-color:var(--line-2)}
+:where(input,textarea)::placeholder{color:var(--faint);opacity:1}
+.btn.primary,.btn.primary:hover{background:linear-gradient(100deg,#EE77AC,#CC538F);border-color:#EE77AC;color:var(--brand-ink)}
+.btn.primary:hover{background:linear-gradient(100deg,#FF96BF,#E06AA1)}
+.btn.dark{background:#402340;border-color:#72486B;color:var(--text)}
+.btn.dark:hover{background:#583153;border-color:#926285}
+.btn{border-radius:11px}
+.btn:focus-visible{outline:2px solid #FFC1DE;outline-offset:3px}
+
+
+body{background:var(--frame);color:var(--text)}
+.side{background:linear-gradient(180deg,#171020,#100C16);border-right:1px solid var(--line)}
+main{background:var(--bg)}
+.topbar{background:rgba(22,16,28,.96);border-color:var(--line);min-height:64px}
+.topbar h1,.card h2,.card-head h2,.tile b,.empty b,.facts b,.dlg h2{color:var(--text)}
+.content{max-width:1450px}
+.nav-item{min-height:42px;border-radius:11px}
+.nav-item.on{background:linear-gradient(95deg,#EA70A8,#CE538F);color:var(--brand-ink)}
+.nav-item.on svg{color:var(--brand-ink)}
+.card,.tile{background:linear-gradient(145deg,#25172D,#1B1422);border:1px solid var(--line);border-radius:17px}
+.tile{border-top:2px solid #693C66}
+.tile i{background:#402440}
+input[type=text],input[type=search],input[type=number],textarea{background:#1A1221;color:var(--text)}
+input:hover,textarea:hover{border-color:#815678}
+tr.u:hover>td{background:#302039}
+.seg{background:#2B1A31}
+.seg button:hover{background:#48304A;color:var(--text)}
+dialog{background:#211629;color:var(--text);border:1px solid var(--line-2)}
+dialog::backdrop{background:rgba(6,3,10,.8)}
+.note{background:#38233B;color:#FBD9EB}
+@media(max-width:900px){main{margin:0;border-radius:0}.side{border-right:0}.content{padding:18px 16px 70px}}
+
+
+td b,.fbtop b,.fact b{color:var(--text)}
+.seg button:hover{background:#48304A;color:var(--text)}
+::-webkit-scrollbar-thumb{background:#593951;border-color:var(--bg)}
 </style>
 </head>
 <body>

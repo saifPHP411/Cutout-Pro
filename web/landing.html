@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0E0B14">
 <title>PeakCut: AI Clip Maker for Twitch, Kick &amp; YouTube Live Streams</title>
 <meta name="description" content="PeakCut clips Twitch, Kick and YouTube live streams while they're still live. AI finds the best moments and turns them into captioned vertical Shorts, Reels and TikToks. Free and open source.">
 <link rel="canonical" href="{{SITE}}/">
 <meta name="robots" content="index,follow,max-image-preview:large">
-<meta name="theme-color" content="#FF8B33">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="PeakCut">
 <meta property="og:url" content="{{SITE}}/">
@@ -271,6 +271,65 @@ details p{color:var(--dim);margin-top:12px;font-size:16px}
 }
 @media (max-width:560px){.bar{border-radius:var(--r-lg);flex-basis:100%}.bar form{flex-direction:column;align-items:stretch}.bar .btn{width:100%;border-radius:var(--r)}.ask .or{display:none}.ask .up{width:100%;height:50px}header.nav .signin{display:none}.reel figure:not(.mid){display:none}.reel figure.mid{flex-basis:260px}.mock.result{grid-template-columns:110px 1fr}.mock.result video{width:110px}.trio b{font-size:36px}.notes span+span::before{display:none}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}.js .reveal,.js .ledger div{opacity:1;transform:none}.jb .t i{width:var(--v)}.meterbar i{width:70%}}
+
+
+/* PeakCut Pro — shared burgundy/dark UI tokens */
+:root{
+ --brand:#E7659F;--brand-hi:#F080B3;--brand-press:#F080B3;
+ --brand-ink:#240C1B;--brand-soft:#3A2139;--brand-line:#744464;--brand-deep:#FDB6D5;
+ --ink:#F9EFF8;--deep:#FDB6D5;--soft:#3A2139;--line-b:#744464;
+ --frame:#0E0B14;--frame-2:#211728;--frame-text:#FBF2F9;--frame-dim:#D0B9D0;--frame-line:#3D2A42;
+ --bg:#16101C;--muted:#261A2D;--line:#3C2A43;--line-2:#5B3C59;
+ --text:#F9EFF8;--dim:#D4BFD4;--faint:#B59AB6;
+ --good:#79DEB6;--good-soft:#1C352E;--bad:#FFB0B9;--bad-soft:#45232E;
+ --r-lg:18px;--r:13px;--r-sm:9px;color-scheme:dark;
+}
+::selection{background:#744464;color:#fff}
+:focus-visible{outline:2px solid #FFC1DE;outline-offset:3px}
+:where(input,textarea,select){color:var(--text);background:#1B1223;border-color:var(--line-2)}
+:where(input,textarea)::placeholder{color:var(--faint);opacity:1}
+.btn.primary,.btn.primary:hover{background:linear-gradient(100deg,#EE77AC,#CC538F);border-color:#EE77AC;color:var(--brand-ink)}
+.btn.primary:hover{background:linear-gradient(100deg,#FF96BF,#E06AA1)}
+.btn.dark{background:#402340;border-color:#72486B;color:var(--text)}
+.btn.dark:hover{background:#583153;border-color:#926285}
+.btn{border-radius:11px}
+.btn:focus-visible{outline:2px solid #FFC1DE;outline-offset:3px}
+
+
+body{background:var(--bg);color:var(--text)}
+header.nav,header.nav.stuck{background:rgba(16,11,21,.96);border-color:var(--line)}
+header.nav .wrap img{filter:brightness(0) invert(1)}
+header.nav nav a:hover,header.nav .signin:hover{background:var(--muted)}
+.hero{background:radial-gradient(ellipse 67% 72% at 50% 0%,#48233F 0%,#211526 59%,var(--bg) 100%)}
+.hero h1,h1,h2,.step h3,.cell h3,.panel .pain{color:var(--text)}
+h2 span{color:var(--faint)}
+.hero h1 .hl{background:linear-gradient(105deg,#F184B6,#C95594);color:var(--brand-ink)}
+.announce,.bar,.mock,.cell,.flow span,.field,.tab,.step .no,.chips span,.acts span{
+ background:#23172A;border-color:var(--line-2);color:var(--text)
+}
+.announce b,.mock .go,.acts .pri,.cliprow .sc{background:var(--brand);color:var(--brand-ink)}
+.announce:hover,.bar:focus-within{border-color:var(--brand)}
+.bar input{background:transparent;color:var(--text)}
+.notes svg{color:var(--good)}
+.reel figure figcaption{color:var(--dim)}
+.reel .phone{border-color:#301E36;background:#0E0A13}
+.sized{background:#1B1221;border-color:var(--line)}
+.open{background:#0F0B15}
+.trio div{background:#1A1221}
+.steps::before{background:var(--line-2)}
+.cell{background:linear-gradient(145deg,#25172E,#19121F)}
+.cell .art,.ft{background:#2D1B34}
+.mock{background:#26172F}
+.chips span.on,.tab[aria-selected=true]{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
+.flow span.hot{background:#402440;border-color:var(--brand-line)}
+.panel{background:#211729;border-color:var(--line)}
+.closing{background:radial-gradient(ellipse 65% 90% at 50% 100%,#48243D 0%,#23162B 52%,#16101C 100%);border-color:var(--line)}
+footer.site{background:#0C0910}
+footer.site .fbrand p,footer.site .fgrid a{color:var(--dim)}
+footer.site .fbrand a.fcta{background:var(--brand);color:var(--brand-ink)}
+footer.site .fbrand a.fcta:hover{background:var(--brand-hi)}
+@media(max-width:560px){.hero{padding-top:30px}.bar{border-radius:16px}.hero h1{font-size:clamp(30px,8vw,44px)}}
+
 </style>
 </head>
 <body>

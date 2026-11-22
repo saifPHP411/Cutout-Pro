@@ -45,7 +45,8 @@ def main() -> int:
         else:
             print("The test server did not start.")
             return 1
-        runs = [("permissions", ["tests/test_permissions.py", BASE, str(ROOT), sys.executable]),
+        runs = [("burgundy UI tokens and mobile controls", ["tests/test_ui_theme.py"]),
+                ("permissions", ["tests/test_permissions.py", BASE, str(ROOT), sys.executable]),
                 ("abuse and limits", ["tests/test_abuse.py", BASE, str(ROOT)]),
                 ("queue under load", ["tests/test_load_queue.py", str(ROOT)]),
                 ("a day-long video in little memory", ["tests/test_longvideo.py"]),

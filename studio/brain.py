@@ -283,7 +283,11 @@ def _snap(clip, lines, words, min_len, max_len, duration):
     # a short breath after the last word, but never into the next sentence
     nxt = next((w["s"] for w in words if w["s"] > e - 0.01), None)
     tail = 0.35 if nxt is None else min(0.35, max(0.08, nxt - e - 0.05))
-    return round(max(0.0, s - 0.15), 2), round(min(duration, e + tail), 2)
+    # Padding must not silently extend an export past the user's maximum clip length.
+    # Keep the setup breath if possible, trimming the tail first when the budget is tight.
+    start = round(max(0.0, s - 0.15), 2)
+    end = round(min(duration, e + tail, start + max_len), 2)
+    return start, end
 
 
 def fallback_by_loudness(db, words, n, max_len, duration):
