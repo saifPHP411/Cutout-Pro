@@ -361,7 +361,9 @@ def render_clip(src: Path, out_dir: Path, name: str, clip: dict, words: list, sr
             layout, fg_h, hook_y, cap_y = geometry(src_w, src_h, "fit", canvas)
     face = clip.get("facecam")
     if layout == "gameplay" and not (face and len(face) == 4):
-        layout = "crop"     # no webcam found: the game fills the screen, which is still the right shape
+        # A centre crop can erase the streamer's facecam entirely. Preserve the
+        # full source frame until a camera box is confidently identified.
+        layout, fg_h, hook_y, cap_y = geometry(src_w, src_h, "blur", canvas)
     hook_y = min(canvas[1] * 0.45, _hook_y(layout, hook_y, face))
     ass = build_ass(words if clip.get("captions", True) else [], start, end, clip.get("hook", ""), clip.get("style", "bounce"),
                     clip.get("highlight_words", []), hook_y, cap_y, canvas, clip.get("caption_appearance"), safe_zone)
