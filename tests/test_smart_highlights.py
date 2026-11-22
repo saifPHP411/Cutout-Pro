@@ -1,5 +1,6 @@
 """Smart Highlights: opt-in CPU visual cues, ranking evidence and safe options."""
 import os
+import sys
 import subprocess
 import tempfile
 import unittest
@@ -10,6 +11,7 @@ import numpy as np
 
 os.environ["PEAKCUT_DATA"] = tempfile.mkdtemp(prefix="pc-smart-highlights-")
 os.environ["DATABASE_URL"] = ""
+sys.path.insert(0, ".")
 from studio import brain, jobs, quality  # noqa: E402
 
 
