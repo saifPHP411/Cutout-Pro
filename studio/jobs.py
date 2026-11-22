@@ -152,7 +152,7 @@ def clean_options(options) -> dict:
     for k, v in (options if isinstance(options, dict) else {}).items():
         if k in ("captions", "experiment", "visual_triage"):
             if not isinstance(v, bool):
-                raise ValueError("This option must be on or off.")
+                raise ValueError("Captions must be on or off." if k == "captions" else "This option must be on or off.")
             out[k] = v
             continue
         if k in ("hook_text", "description_text"):     # kept even when empty: it clears the creator's own text for this video
