@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0E0B14">
 <title>PeakCut Pro</title>
 <link rel="icon" type="image/svg+xml" href="/brand/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -10,13 +11,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Inter:wght@300&family=Archivo+Black&family=Anton&family=Poppins:wght@800&display=swap" rel="stylesheet">
 <style>
 :root{
-  --brand:#F0A0BF;--brand-press:#DF7AA3;--brand-ink:#311121;--brand-soft:#392330;--brand-line:#674358;--brand-deep:#F1ABD0;
-  --frame:#160E17;--frame-2:#2B1B2B;--frame-line:#332233;--frame-text:#F7EDF4;--frame-dim:#C8AFC3;
-  --bg:#211723;--muted:#2C1F2D;--line:#3D2B3F;--line-2:#563C56;
-  --text:#F7EEF5;--dim:#CFB8CC;--faint:#BFA5BA;
-  --good:#88D5AE;--good-soft:#20372F;--bad:#FFABB7;--bad-soft:#46232E;--live:#DD5F80;
-  --r-lg:16px;--r:12px;--r-sm:8px;
-  color-scheme:dark;
+  --brand:#E7659F;--brand-press:#F080B3;--brand-ink:#240C1B;--brand-soft:#3A2139;--brand-line:#744464;--brand-deep:#FDB6D5;
+  --frame:#0E0B14;--frame-2:#211728;--frame-line:#3D2A42;--frame-text:#FBF2F9;--frame-dim:#D0B9D0;
+  --bg:#16101C;--muted:#261A2D;--line:#3C2A43;--line-2:#5B3C59;
+  --text:#F9EFF8;--dim:#D4BFD4;--faint:#B59AB6;
+  --good:#79DEB6;--good-soft:#1C352E;--bad:#FFB0B9;--bad-soft:#45232E;--live:#FF5D8D;
+  --r-lg:18px;--r:13px;--r-sm:9px;color-scheme:dark;
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -838,6 +838,115 @@ dialog[open]{animation:fadein .16s ease}
 .pro-kpi{font-size:26px;font-weight:700;line-height:1.2}
 .pro-quality{height:8px;border-radius:6px;background:var(--muted);overflow:hidden;margin-top:5px}
 .pro-quality i{height:100%;display:block;background:var(--brand)}
+
+/* PeakCut Pro Studio visual system — light on effects, responsive on ARM/mobile.
+   Scoped to the signed-in studio; original actions, routes and dialogs stay intact. */
+html{background:var(--frame);scrollbar-color:#583A58 var(--bg)}
+body{background:var(--frame);color:var(--text)}
+::selection{background:#753653;color:#fff}
+::-webkit-scrollbar-thumb{background:#593951;border-color:var(--bg)}
+.side{
+  background:linear-gradient(180deg,#171020 0%,#100C16 64%,#1B1020 100%);
+  border-right:1px solid var(--frame-line);
+}
+.side-head{padding-bottom:20px}
+.nav-item{min-height:42px;border-radius:11px;padding:0 12px;transition:background-color .16s ease,color .16s ease}
+.nav-item:hover{background:#352138;color:#fff}
+.nav-item.on,.nav-item.on:hover{
+  background:linear-gradient(100deg,#EA6CA4,#C95191);color:var(--brand-ink);
+}
+.nav-item.on svg{color:var(--brand-ink)}
+.side-card{border:1px solid var(--frame-line);background:#23162A}
+.side-foot{border-color:var(--frame-line)}
+main#main{background:#16101C}
+.topbar{
+  background:rgba(22,16,28,.96);border-bottom:1px solid var(--line);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);min-height:64px;
+}
+.topbar h1{color:var(--text);font-size:17px;font-weight:700;letter-spacing:-.025em}
+.topbar p{color:var(--dim)}
+.content{max-width:1420px;padding:30px 36px 80px}
+.hero{background:radial-gradient(ellipse 72% 90% at 50% 0%,#48243F 0%,#221529 49%,var(--bg) 96%);border-bottom:1px solid var(--line)}
+.hero h2{letter-spacing:-.038em}
+.card,.tile,.clip,.composer{
+  border-color:var(--line);
+  background:linear-gradient(148deg,#231729 0%,#1B1422 85%);
+  border-radius:var(--r-lg);
+}
+.card,.tile{padding:22px}
+.card>h2,.card-head h2,.tile b,.job-head h3{color:var(--text)}
+.tile{min-width:0;border-top:2px solid #6B3A61}
+.tile i{background:#3E213B;color:var(--brand-deep)}
+.clip{overflow:hidden}
+.clip:hover,.card:focus-within,.composer:focus-within{border-color:#845476}
+.composer{border:1px solid #6A3B62;background:#201526}
+.composer.compact{background:#261A2E}
+.composer:has(#url:focus){border-color:var(--brand)}
+.btn{border-radius:11px;transition:background-color .15s ease,border-color .15s ease,color .15s ease}
+.btn.primary,.btn.primary:hover{
+  background:linear-gradient(105deg,#E86C9F,#C95490);border-color:#E978AD;color:#220C1A;
+}
+.btn.primary:hover{background:linear-gradient(105deg,#F18AB6,#DF6AA2)}
+.btn.dark{background:#402340;border-color:#72486B;color:var(--text)}
+.btn.dark svg{color:var(--brand-deep)}
+.btn:focus-visible,.nav-item:focus-visible,.icon-btn:focus-visible{
+  outline:2px solid #FFBEDD;outline-offset:3px;
+}
+:where(input:not([type=checkbox],[type=radio],[type=file],[type=range]),select,textarea){
+  background:#160F1D;border-color:var(--line-2);color:var(--text);
+}
+:where(input:not([type=checkbox],[type=radio],[type=file],[type=range]),select,textarea):focus{
+  background:#201427;border-color:var(--brand);
+}
+:where(input,textarea)::placeholder{color:var(--faint);opacity:1}
+.utabs,.ttabs,.seg{background:#2B1A31}
+.utabs .tabbtn:hover,.ttabs .tabbtn:hover,.seg button:hover,.tile-o:enabled:hover{
+  background:#48304A;color:var(--text);
+}
+.ttabs .tabbtn.on{background:#503051;color:#fff}
+.vb{background:#352532;color:#FFE0AF;border:1px solid #845E61}
+.vb b{color:#FFE5C4}
+.chprev.bad{background:#41232D;color:var(--bad)}
+tr:hover>td{background:#2E2034}
+.ai-card:hover{background:#302039}
+.ai-card.on{border-color:#B45D88}
+.stream{background:#120E19;border:1px solid #4B2B46}
+.noembed{background:#0C0A12}
+dialog{background:#211629;color:var(--text);border:1px solid var(--line-2)}
+dialog::backdrop{background:rgba(6,3,10,.8)}
+.tr-card{background:#25192E;border:1px solid var(--line-2)}
+.tr-body h2,.tr-chip,.tr-back{color:var(--text)}
+.tr-chip{background:#39243B}
+.tr-chip.on{color:#240C1B}
+.tr-art{background:#38213A}
+.tr-back:hover{background:#46304C}
+:where(button,a,[role="button"]){-webkit-tap-highlight-color:transparent}
+@media (max-width:1100px){
+ .content{padding:24px 22px 70px}
+}
+@media (max-width:900px){
+ .side{padding-bottom:max(14px,env(safe-area-inset-bottom))}
+ main#main{min-height:100dvh;height:100dvh}
+ .topbar{padding:12px 16px}
+ .content{padding:22px 16px max(76px,env(safe-area-inset-bottom))}
+ .app.open .scrim{background:rgba(5,3,9,.74)}
+}
+@media (max-width:560px){
+ .topbar{min-height:62px;gap:10px}
+ .topbar h1{font-size:17px}
+ .topbar #actions .btn{min-height:40px}
+ .content{padding:18px 14px max(72px,env(safe-area-inset-bottom))}
+ .card,.tile{padding:16px}
+ .tiles,.tiles.five{gap:10px}
+ .tile b{font-size:clamp(19px,5vw,26px)}
+ .composer-bar .btn.primary{min-height:48px}
+ .utabs .tabbtn{min-height:42px}
+ .job-actions .btn,.pro-actions .btn{min-height:44px}
+}
+@media (prefers-reduced-motion:reduce){
+ .nav-item,.btn,.topbar{transition:none!important}
+ .topbar{backdrop-filter:none;-webkit-backdrop-filter:none}
+}
 </style>
 </head>
 <body>
