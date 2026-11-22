@@ -97,6 +97,8 @@ check("an end already on a sentence end stays there", 15.8 <= e <= 16.2)
 check("...with a breath after it, but not into the next sentence", e < 16.1)          # the next sentence starts at 16.1
 s, e = brain._snap({"start": 0.0, "end": 13.4}, lines, w, 5, 14, 30)      # no room to finish it: the sentence before
 check("with no room to finish the sentence, the clip ends at the one before", 11.6 <= e <= 12.1)
+s, e = brain._snap({"start": 0.0, "end": 15.9}, lines, w, 5, 16, 30)
+check("sentence padding cannot exceed max clip length", 15.8 <= e <= 16.0 and e - s <= 16.0)
 w2 = talk(sents, pause=0.9, punct=False)          # YouTube's transcript: no punctuation, pauses between sentences
 ends2 = brain.sentence_ends(w2)
 s, e = brain._snap({"start": 0.0, "end": 14.0}, brain.make_lines(w2), w2, 5, 60, 40)
