@@ -965,6 +965,19 @@ label.ck:has(input:checked){color:var(--text)}
  background:#48304A;color:var(--text)
 }
 .nstep .ctl button:hover,.nstep .ctl button:focus-visible{color:var(--brand-ink)}
+
+/* Smart Highlights: explain measured cues without claiming to understand frames. */
+.clip-evidence{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}
+.clip-evidence span{display:inline-flex;align-items:center;min-height:28px;border-radius:99px;padding:3px 10px;
+  font-size:12px;font-weight:600;background:#35223B;border:1px solid #694365;color:#F2D5E6}
+.clip-score-details{border:1px solid var(--line-2);border-radius:12px;margin:12px 0;padding:10px 12px;background:#211627}
+.clip-score-details summary{cursor:pointer;color:var(--text);font-size:13px;font-weight:650}
+.clip-score-details summary:focus-visible{outline:2px solid #FFC1DE;outline-offset:3px}
+.clip-score-list{display:grid;gap:9px;margin-top:12px}
+.clip-score-row{display:grid;grid-template-columns:minmax(110px,1fr) minmax(64px,1.2fr) 40px;
+  align-items:center;gap:10px;font-size:12px;color:var(--dim)}
+.clip-score-row progress{width:100%;height:9px;accent-color:var(--brand);background:var(--muted)}
+.clip-score-row b{text-align:right;color:var(--text);font-variant-numeric:tabular-nums}
 </style>
 </head>
 <body>
@@ -1645,6 +1658,7 @@ function drawAdd(variant) {
       <div class="ob"><label class="f">Campaign<select id="o_campaign"><option value="">No campaign</option>${opts(Object.fromEntries((S.campaigns || []).map(c => [c.id,c.name])), "")}</select></label></div>
       <div class="ob"><label class="f">Queue priority<select id="o_priority"><option value="0">Normal</option><option value="1">High</option></select></label></div>
       <div class="ob"><label class="f">Layout preset<select id="o_template"><option value="">Custom layout</option>${opts(S.status.templates, "")}</select></label></div>
+      <div class="ob wide"><label class="ck"><input id="o_visual_triage" type="checkbox"><span>Visual Highlights (sampled motion)<small>Optional CPU scan at 1 frame/second. Helps shortlist action-heavy gaming moments when the full source video is available. Measures movement only, not what happened.</small></span></label></div>
       <div class="ob"><label class="ck"><input id="o_experiment" type="checkbox">Include in active ranking experiment</label></div>
       <div class="ob"><label class="f">Platform safe zone<select id="o_safe_zone">${opts(S.status.safe_zones, "none")}</select></label></div>
       <div class="ob"><label class="f">Aspect ratio<select id="o_aspect">${opts(Object.fromEntries(S.status.aspects.map(k => [k,k])), "9:16")}</select></label></div>
@@ -1732,7 +1746,7 @@ function jobOptions() {
   const n = id => { const v = $(id).value; return v === "" ? null : Number(v); };
   const o = {max_clips:n("#o_max"), min_len:n("#o_min"), max_len:n("#o_maxlen"), captions:$("#o_captions").checked, style:$("#o_style").value, layout:$("#o_layout").value, quality:n("#o_quality"),
     hook_text:$("#o_hook").value.trim(), description_text:$("#o_desc").value.trim(), lang:$("#o_lang")?.value || "en", mode:$("#o_mode")?.value || "balanced",
-    campaign:$("#o_campaign").value, priority:n("#o_priority"), safe_zone:$("#o_safe_zone").value, experiment:$("#o_experiment").checked, aspect:$("#o_aspect").value, template:$("#o_template").value, caption_mode:$("#o_caption_mode").value};
+    campaign:$("#o_campaign").value, priority:n("#o_priority"), safe_zone:$("#o_safe_zone").value, experiment:$("#o_experiment").checked, visual_triage:$("#o_visual_triage").checked, aspect:$("#o_aspect").value, template:$("#o_template").value, caption_mode:$("#o_caption_mode").value};
   if (n("#o_from") !== null) o.range_start = n("#o_from") * 60;
   if (n("#o_to") !== null) o.range_end = n("#o_to") * 60;
   return o;
@@ -2480,6 +2494,28 @@ async function ytCookiesCard(logo) {
 async function saveSettings() { const d = {}; $$("#sform [data-s]").forEach(i => d[i.dataset.s] = i.value); await send("/api/settings", d, "PUT"); }
 
 /* ============================================================ clip editor */
+const CLIP_SIGNAL_LABELS = {audio_peak:"Audio peak", spoken_reaction:"Spoken reaction", chat_burst:"Chat burst",
+  motion_spike:"Sampled motion spike"};
+const CLIP_RATING_LABELS = {hook_strength:"Opening hook", emotional_impact:"Emotional impact",
+  entertainment:"Entertainment", context_clarity:"Context clarity", standalone_story:"Standalone story",
+  ending_quality:"Payoff / ending", retention:"Estimated retention", visual_interest:"Visual interest",
+  originality:"Originality"};
+function clipEvidence(c) {
+  const signals = c.signals && typeof c.signals === "object" ? Object.entries(CLIP_SIGNAL_LABELS)
+    .filter(([key]) => c.signals[key] === true).map(([,label]) => '<span>' + esc(label) + '</span>') : [];
+  const badges = signals.length ? '<div class="clip-evidence" aria-label="Measured supporting signals">' + signals.join("") + '</div>' : "";
+  const ratings = c.ratings && typeof c.ratings === "object" ? Object.entries(CLIP_RATING_LABELS)
+    .filter(([key]) => Number.isFinite(Number(c.ratings[key])) && c.ratings[key] !== undefined)
+    .map(([key,label]) => {
+      const n = Math.max(0,Math.min(100,Math.round(Number(c.ratings[key]))));
+      return '<div class="clip-score-row"><span>' + esc(label) + '</span><progress max="100" value="' + n
+        + '" aria-label="' + esc(label) + '"></progress><b>' + n + '</b></div>';
+    }) : [];
+  const breakdown = ratings.length ? '<details class="clip-score-details"><summary>AI rating breakdown</summary>'
+    + '<p class="help">Editorial estimates, not actual view or retention statistics.</p>'
+    + '<div class="clip-score-list">' + ratings.join("") + '</div></details>' : "";
+  return badges + breakdown;
+}
 function openClip(jid, cid) { D.jid = jid; D.cid = cid; D.sig = ""; drawClipDlg(true); $("#clipdlg").showModal(); }
 function drawClipDlg(full) {
   const j = jobOf(D.jid), c = j?.clips.find(x => x.id === D.cid), dlg = $("#clipdlg");
@@ -2492,7 +2528,7 @@ function drawClipDlg(full) {
     dlg.innerHTML = `<div class="editor"><div class="stage" id="stage">${stage}</div>
       <div class="panel">
         <div class="job-head" style="margin:0"><div><span class="badge ${scoreCls(c.score)}" style="position:static">${c.judges ? "Words " + c.judges.words + (c.judges.reaction ? " · Reaction " + c.judges.reaction : "") : c.score ? "Score " + c.score : "Clipped by hand"}</span>
-          <p class="sub" style="margin-top:8px">${esc(c.reason || "")}</p></div><button class="btn icon ghost" data-act="closedlg" aria-label="Close">${ic("x")}</button></div>
+          <p class="sub" style="margin-top:8px">${esc(c.reason || "")}</p>${clipEvidence(c)}</div><button class="btn icon ghost" data-act="closedlg" aria-label="Close">${ic("x")}</button></div>
         <h3>On the video</h3>
         <label class="f">Big text<input data-f="hook" value="${esc(c.hook)}"></label>
         <label class="sw"><input type="checkbox" data-f="captions" data-caption-toggle ${c.captions === false ? "" : "checked"}>Generate captions</label>
