@@ -947,6 +947,24 @@ dialog::backdrop{background:rgba(6,3,10,.8)}
  .nav-item,.btn,.topbar{transition:none!important}
  .topbar{backdrop-filter:none;-webkit-backdrop-filter:none}
 }
+
+/* Contrast audit: older --brand-ink was used for both button ink and headings.
+   Leave it dark on pink controls, but use light ink on dark panels. */
+.chprev b,.upd h3,.chan .who b,.empty b,.hero h2,.lp .tx b,
+.kpi b,.set-link.on b,.set-sec h2,.prof b,.apptx>b,.step .n,
+.hook,.lc-title h3,.stat b,.evbtn,a.lnk,.plan b,.dlg h2,
+.ntoast b,.pop-head h3,.nt b,.pop.menu .who2 b,.ai-big,.ai-stats b,
+table.stack td.c-main,.nstep input,.nstep input:focus,.range input,.range input:focus,
+.card .pro-kpi,.badge,.chip.on,.pick.open .chip,.tile-o[aria-pressed=true],
+.seg button[aria-pressed=true],.tabbtn.on,.ttabs .tabbtn.on,
+label.ck:has(input:checked){color:var(--text)}
+.plans-btn{color:var(--brand-ink)}
+.pill.brand,.badge.s-hi,.badge.s-mid,.nav-item.on .count,.nav-item.on .working{color:var(--brand-ink)}
+.chip:hover,.chip:focus-visible,.chip.on:hover,.pick.open .chip:hover,
+.addrow:hover,.addrow:focus-visible,.tabbtn:hover,.ai-home .row .btn:hover{
+ background:#48304A;color:var(--text)
+}
+.nstep .ctl button:hover,.nstep .ctl button:focus-visible{color:var(--brand-ink)}
 </style>
 </head>
 <body>
