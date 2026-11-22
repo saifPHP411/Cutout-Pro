@@ -67,6 +67,11 @@ try:
     check("the job keeps it on the job", "facecam" in job, True)
     check("the box is the right size", abs(box[2] - 300) <= 1 and abs(box[3] - 170) <= 1, True)
     check("a job with no video finds no webcam", jobs._facecam({"source_path": os.path.join(work, "nope.mp4")}), None)
+    # Long VODs are audio-first: a separately fetched segment is the only video file.
+    segment_job = {}
+    segment_box = jobs._facecam(segment_job, source_path=cam_br)
+    check("a long-VOD clip segment supplies its own webcam", bool(segment_box), True)
+    check("the segment webcam is cached on the job", segment_job.get("facecam"), segment_box)
 
     # ---- a webcam that is square and runs along one edge, not into a corner
     sq = make("cam_sq.mp4", "color=c=0xC08050:size=360x355:rate=25", where="920:165")
@@ -116,6 +121,15 @@ try:
     check("another picture moves the heading with it",
           render._hook_y("gameplay", 300, [0, 0, 300, 170]) < render._hook_y("gameplay", 300, [0, 0, 363, 376]), True)
     check("without a webcam the heading stays at the top", render._hook_y("crop", 300, None), 300)
+    # When detection fails, do not crop away a facecam that remains in the source.
+    from pathlib import Path
+    from unittest.mock import patch as patched
+    with patched.object(render, "_render_in", return_value={"layout": "blur", "qc": {"status": "passed"}}) as fake_render:
+        render.render_clip(Path(cam), Path(work), "fallback", {
+            "start": 0, "end": 2, "layout": "gameplay", "captions": False, "mode": "balanced",
+        }, [], 1280, 720)
+        check("an undetected facecam falls back to full-frame blur", fake_render.call_args.args[6], "blur")
+        check("blur fallback keeps a landscape-height foreground", fake_render.call_args.args[7] < 1920, True)
 finally:
     shutil.rmtree(work, ignore_errors=True)      # the pictures are big; they must not be left behind
 
