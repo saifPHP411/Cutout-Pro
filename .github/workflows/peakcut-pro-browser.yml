@@ -1,0 +1,46 @@
+name: PeakCut Pro Browser QA
+on:
+  push:
+    branches: [feature/peakcut-pro-smart-highlights]
+  workflow_dispatch:
+  pull_request:
+    branches: [main, feature/peakcut-pro-burgundy-studio-ui]
+permissions:
+  contents: read
+jobs:
+  browser-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - name: Install application and browser dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg fonts-noto-core fonts-noto-cjk
+          python -m pip install -r requirements.txt
+          python -m pip install playwright
+          python -m playwright install --with-deps chromium
+      - name: Test Smart Highlights on Pixel 7 and desktop Chromium
+        env:
+          PEAKCUT_FETCH_MODEL: '0'
+          PEAKCUT_AI_MODELS: ''
+          PEAKCUT_AI_KEY: ''
+        run: python tests/test_browser_smart.py
+      - name: Exercise Android phone control workflow
+        env:
+          PEAKCUT_FETCH_MODEL: '0'
+          PEAKCUT_AI_MODELS: ''
+          PEAKCUT_AI_KEY: ''
+        run: python tests/test_mobile_pro.py
+      - name: Keep QA screenshots for human review
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: peakcut-browser-qa
+          path: artifacts/browser/
+          retention-days: 7
+          if-no-files-found: warn
