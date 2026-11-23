@@ -30,17 +30,27 @@ allowances.
   ruled ineligible even when everything is self-produced. Each short must
   provide real distinct explanation and value. Source:
   https://support.google.com/youtube/answer/1311392
-- **Four source-checked scripts are a pilot, not an endless content
-  library.** The queue stops when used. It does not endlessly recycle
-  facts or invent claims. Continuous original science research and a
-  separate original long-form series remain future work.
-- Piper is open source, but **voice model licenses vary**. Example
-  MIT-labelled Arabic Emirati female ONNX model:
+- **Four NASA-source-checked scripted episodes are the initial pilot.**
+  When exhausted, the system can keep discovering **future Earth close
+  approaches in official NASA/JPL numerical data** (free, no API key).
+  Every event is unique, values are validated against the documented v1.5
+  schema, and the astronomy narration is assembled from a meaning-preserving
+  Arabic template. Events are capped at one new asteroid subject per 10 days.
+  If there is no eligible or reliable event, **the publisher skips that day**.
+  This is NOT a guarantee of daily or endless high-quality creative content.
+  Source: https://ssd-api.jpl.nasa.gov/doc/cad.html
+  Fully automated video production still needs editorial originality and
+  science accuracy reviews before public use.
+- The free default Arabic voice is downloaded automatically on first use
+  from a **pinned Hugging Face model revision**: 
   https://huggingface.co/vadimbelsky/arabic-emirati-female-piper
-  Download the model + JSON manually and verify that its voice/dataset
-  license allows commercial use. The ar_JO Kareem model card does **not**
-  explicitly state a dataset license, so don't assume it's cleared.
-  Avoid Meta MMS-TTS Arabic for commercial output: CC BY-NC 4.0.
+  The model publisher declares **MIT**; the initial download is bounded,
+  stored privately and its SHA-256 is recorded to detect subsequent changes.
+  The model-card declaration is **not an independent audit of training data
+  rights**, so independent rights and clear Arabic pronunciation are still
+  required before commercial/public release. No voice weights are committed
+  to GitHub. Custom voices require explicit rights confirmation.
+  Avoid noncommercial weights such as CC BY-NC voices.
 - Narration audio must actually sound intelligible in Arabic on the chosen
   local model. Do not upload the generated CI's synthetic/silent test WAV.
 - **No actual upload has been made** and YouTube YPP status is not known.
@@ -62,13 +72,14 @@ records/APIs remain intact for users with old projects, but campaigns are
    external OAuth app in *Testing* typically gets a refresh token expiring
    after seven days. Source:
    https://developers.google.com/identity/protocols/oauth2
-2. Install the free `piper-tts` package (or a local Piper executable) and
-   obtain **properly commercially licensed** Arabic ONNX + `.onnx.json`
-   files. Optional package with ARM64 Linux wheels:
-   `pip install piper-tts`.
+2. The container installs the free Piper engine. The selected built-in
+   Arabic model and config are automatically fetched from a pinned,
+   MIT-declared Hugging Face repository **after an authorized preview or
+   publisher run**. With a custom model, set its absolute path and review
+   its commercial rights separately.
 3. Run `python tools/original_youtube_autopilot.py plan` without any key.
-4. Render a **local-only** pilot:
-   `python tools/original_youtube_autopilot.py preview --voice-model /data/voices/arabic.onnx --output-dir /data/preview-science`
+4. Render a **local-only** pilot (the voice downloads when missing):
+   `python tools/original_youtube_autopilot.py preview --output-dir /data/preview-science`
    Check narration, scientific claims, originality, captions/text direction,
    bitrate, volume, and final 1080×1920 H264/AAC output.
 5. Run local or ARM64 tests before enabling unattended publication:
@@ -79,10 +90,12 @@ records/APIs remain intact for users with old projects, but campaigns are
 Set these on **your own secure Oracle service**, never in a public repo:
 ```ini
 PEAKCUT_ORIGINAL_AUTOPOST=1
-PEAKCUT_ORIGINAL_VOICE_LICENSE_APPROVED=1
-PEAKCUT_ORIGINAL_VOICE_MODEL=/data/voices/arabic.onnx
+PEAKCUT_ORIGINAL_BUILTIN_VOICE=1
+PEAKCUT_ORIGINAL_LIVE_JPL=1
 PEAKCUT_ORIGINAL_USER_ID=<actual-owning-PeakCut-user-id>
 PEAKCUT_ORIGINAL_YOUTUBE_ACCOUNT=yt_<actual-channel-id>
+# Custom voices only: PEAKCUT_ORIGINAL_VOICE_MODEL=<absolute-path>
+# Custom voices only: PEAKCUT_ORIGINAL_VOICE_LICENSE_APPROVED=1
 ```
 Manual one-shot command:
 `python tools/original_youtube_autopilot.py publish`.
@@ -97,9 +110,11 @@ original 1080×1920 Shorts and posts to the *explicit connected YouTube
 account* in the Education category. No campaign, third-party clips or
 Windsor.ai are required. It never chooses a random remote clip.
 
-It refuses to post if the voice license is not explicitly cleared, the
-owner/account does not match, the voice renderer fails, the video export
-fails, or that UTC date has already published an episode. The upload
+It refuses to post if a custom voice lacks license approval (the built-in
+voice is allowed only while its pinned MIT-declared source is selected),
+the owner/account does not match, the voice renderer fails, the video export
+fails, NASA/JPL responses are invalid, or that UTC date has already
+attempted an upload. The upload
 ledger has an `upload_unknown` reservation to avoid duplicate uploads
 after a timeout; reconcile by visiting YouTube Studio rather than
 blindly retrying it.
