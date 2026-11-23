@@ -45,6 +45,15 @@ allowances.
   local model. Do not upload the generated CI's synthetic/silent test WAV.
 - **No actual upload has been made** and YouTube YPP status is not known.
 
+## Phone-first dashboard
+
+The sidebar now has a dedicated **YouTube Autopilot** page at
+`/app/autopilot` instead of the old Campaigns navigation entry.
+It reports your original pilot catalog, pending topics, authorized channel,
+commercial voice readiness, schedule and upload history. Legacy campaign
+records/APIs remain intact for users with old projects, but campaigns are
+**not** used by this original-content automation.
+
 ## Review / test a preview
 
 1. In PeakCut **Settings → Connected apps**, configure the Google OAuth
