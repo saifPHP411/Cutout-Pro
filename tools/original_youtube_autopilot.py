@@ -21,7 +21,7 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from studio import accounts, config, ctx, original_shorts, original_voice, space_data  # noqa: E402
+from studio import accounts, config, ctx, original_shorts, original_voice, original_youtube_settings, space_data  # noqa: E402
 
 AUTO_DIR = "original_youtube"
 AUTO_FLAG = "PEAKCUT_ORIGINAL_AUTOPOST"
@@ -80,9 +80,17 @@ def choose_episode(episodes: list[dict], state: dict, requested: str = "",
     return discover(state, today=today)
 
 
-def require_publishing_config(voice: Path | None = None) -> tuple[str, str, Path]:
+def require_publishing_config(voice: Path | None = None, *, owner_id: str | None = None) -> tuple[str, str, Path]:
+    if owner_id is not None:
+        settings = original_youtube_settings.get(owner_id)
+        if not settings["enabled"]:
+            raise RuntimeError("Autopost is disabled for this owner.")
+        if not original_voice.commercially_allowed(voice):
+            raise RuntimeError("Custom voice model must permit commercial output.")
+        account_id = settings["account_id"]
+        return owner_id, account_id, config.user_dir(owner_id) / AUTO_DIR
     if os.environ.get(AUTO_FLAG) != "1":
-        raise RuntimeError("Autopost is disabled. Explicit PEAKCUT_ORIGINAL_AUTOPOST=1 required.")
+        raise RuntimeError("Autopost is disabled. Link and enable YouTube in the app.")
     if not original_voice.commercially_allowed(voice):
         raise RuntimeError("Confirm the custom voice model permits commercial output before publishing.")
     uid = os.environ.get("PEAKCUT_ORIGINAL_USER_ID", "").strip()
@@ -102,7 +110,7 @@ def render_episode(episode, root: Path, voice: Path) -> Path:
     return original_shorts.render(episode, folder, wav)
 
 
-def publish_once(voice: Path, requested: str = "", *, today: str | None = None):
+def publish_once(voice: Path, requested: str = "", *, today: str | None = None, owner_id: str | None = None):
     """At most one post/day; no automatic retries once an API upload was attempted.
 
     The full file lock lasts through uploading (one small daily Short). This
@@ -110,7 +118,7 @@ def publish_once(voice: Path, requested: str = "", *, today: str | None = None):
     """
     import fcntl
 
-    uid, account_id, root = require_publishing_config(voice)
+    uid, account_id, root = require_publishing_config(voice, owner_id=owner_id)
     episodes = original_shorts.catalog()
     root.mkdir(parents=True, exist_ok=True)
     now = today or datetime.now(timezone.utc).date().isoformat()
@@ -135,6 +143,12 @@ def publish_once(voice: Path, requested: str = "", *, today: str | None = None):
             # Atomic reservation before sending bytes to YouTube. If the server
             # crashes mid-request, operator can reconcile by remote video ID
             # rather than accidentally uploading a duplicate.
+            # Stop toggled in the app while the video was rendering: do not
+            # start a public YouTube request with stale publication consent.
+            if owner_id is not None:
+                current = original_youtube_settings.get(uid)
+                if not current["enabled"] or current["account_id"] != account_id:
+                    return {"status": "disabled_during_render"}
             state["episodes"][episode["id"]] = {"status": "upload_unknown", "started": time.time(),
                                                   "title": episode["title"],
                                                   "source": episode["source"],
@@ -156,7 +170,7 @@ def publish_once(voice: Path, requested: str = "", *, today: str | None = None):
             return {"status": "published", "episode": episode["id"], "youtube_url": url}
 
 
-def refresh_views() -> dict:
+def refresh_views(*, owner_id: str | None = None) -> dict:
     """Read only verified YouTube view counts, never fabricate Shorts revenue.
 
     This is separate from creating/uploading. A missing or partial API result
@@ -164,7 +178,7 @@ def refresh_views() -> dict:
     """
     import fcntl
 
-    uid, account_id, root = require_publishing_config()
+    uid, account_id, root = require_publishing_config(owner_id=owner_id)
     root.mkdir(parents=True, exist_ok=True)
     with (root / "publish.lock").open("a+") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
