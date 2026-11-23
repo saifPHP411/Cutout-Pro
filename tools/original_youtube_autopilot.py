@@ -156,6 +156,43 @@ def publish_once(voice: Path, requested: str = "", *, today: str | None = None):
             return {"status": "published", "episode": episode["id"], "youtube_url": url}
 
 
+def refresh_views() -> dict:
+    """Read only verified YouTube view counts, never fabricate Shorts revenue.
+
+    This is separate from creating/uploading. A missing or partial API result
+    does not erase previously verified counts and is not represented as zero.
+    """
+    import fcntl
+
+    uid, account_id, root = require_publishing_config()
+    root.mkdir(parents=True, exist_ok=True)
+    with (root / "publish.lock").open("a+") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        state = _read_state(root)
+        posted = [(key, value) for key, value in state["episodes"].items()
+                  if value.get("status") == "published" and value.get("video_id")]
+        if not posted:
+            return {"status": "no_published_videos", "updated": 0}
+        with ctx.as_user(uid):
+            account = accounts.get(account_id)
+            if not account or account.get("platform") != "youtube":
+                raise RuntimeError("Connected YouTube account no longer matches the publisher.")
+            # Existing PeakCut OAuth refresh and authorized YouTube videos.list.
+            counts = accounts.youtube_views(account, [v["video_id"] for _, v in posted])
+        updated = 0
+        for _, row in posted:
+            remote = row["video_id"]
+            if remote in counts and isinstance(counts[remote], int) and counts[remote] >= 0:
+                row["verified_views"] = counts[remote]
+                row["views_checked_at"] = time.time()
+                updated += 1
+        if updated:
+            state["last_views_sync"] = time.time()
+            _write_state(root, state)
+        return {"status": "checked", "updated": updated,
+                "unavailable": len(posted) - updated}
+
+
 def run(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("mode", choices=("plan", "preview", "publish"))
