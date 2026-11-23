@@ -995,6 +995,15 @@ label.ck:has(input:checked){color:var(--text)}
  .composer-opts,.composer-opts>.og{transition:none!important}
 }
 
+
+/* Long opt-in descriptions must grow naturally; standard .ck chips are 36px tall. */
+label.visual-triage-toggle{display:flex;align-items:flex-start;gap:10px;height:auto;min-height:66px;
+  padding:12px 13px;max-width:100%;white-space:normal;line-height:1.4}
+label.visual-triage-toggle input{flex:none;margin-top:3px;min-width:17px;min-height:17px}
+label.visual-triage-toggle span{display:block;flex:1;min-width:0;overflow-wrap:anywhere;font-weight:600}
+label.visual-triage-toggle small{display:block;margin-top:5px;color:var(--dim);
+  font-size:12px;font-weight:400;line-height:1.5;white-space:normal;overflow-wrap:anywhere}
+label.visual-triage-toggle:has(input:checked) small{color:#E6C6DB}
 </style>
 </head>
 <body>
@@ -1695,7 +1704,7 @@ function drawAdd(variant) {
       <div class="ob"><label class="f">Campaign<select id="o_campaign"><option value="">No campaign</option>${opts(Object.fromEntries((S.campaigns || []).map(c => [c.id,c.name])), "")}</select></label></div>
       <div class="ob"><label class="f">Queue priority<select id="o_priority"><option value="0">Normal</option><option value="1">High</option></select></label></div>
       <div class="ob"><label class="f">Layout preset<select id="o_template"><option value="">Custom layout</option>${opts(S.status.templates, "")}</select></label></div>
-      <div class="ob wide"><label class="ck"><input id="o_visual_triage" type="checkbox"><span>Visual Highlights (sampled motion)<small>Optional CPU scan at 1 frame/second. Helps shortlist action-heavy gaming moments when the full source video is available. Measures movement only, not what happened.</small></span></label></div>
+      <div class="ob wide"><label class="ck visual-triage-toggle"><input id="o_visual_triage" type="checkbox"><span>Visual Highlights (sampled motion)<small>Optional CPU scan at 1 frame/second. Helps shortlist action-heavy gaming moments when the full source video is available. Measures movement only, not what happened.</small></span></label></div>
       <div class="ob"><label class="ck"><input id="o_experiment" type="checkbox">Include in active ranking experiment</label></div>
       <div class="ob"><label class="f">Platform safe zone<select id="o_safe_zone">${opts(S.status.safe_zones, "none")}</select></label></div>
       <div class="ob"><label class="f">Aspect ratio<select id="o_aspect">${opts(Object.fromEntries(S.status.aspects.map(k => [k,k])), "9:16")}</select></label></div>
