@@ -45,7 +45,7 @@ def start() -> bool:
 
 
 def _loop():
-    from tools.original_youtube_autopilot import publish_once
+    from tools.original_youtube_autopilot import publish_once, refresh_views
     from . import original_voice
 
     last_checked = ""
@@ -60,6 +60,12 @@ def _loop():
         day = now.date().isoformat()
         if _publish_due(now, hour) and day != last_checked:
             last_checked = day
+            # First refresh verified existing Shorts views, even when no new
+            # scientific topic can be published today.
+            try:
+                refresh_views()
+            except Exception:
+                print("[original-youtube] YouTube metrics unavailable; preserving last verified counts", flush=True)
             try:
                 result = publish_once(original_voice.selected_model())
                 status = result.get("status")
