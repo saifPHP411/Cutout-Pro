@@ -182,6 +182,25 @@ def voice_over(text: str, wav: Path, model: Path, binary: str = "piper") -> None
                        input=text + "\n", capture_output=True, text=True, timeout=210, env=env)
     if p.returncode or not wav.is_file() or wav.stat().st_size < 1024:
         raise RuntimeError("Offline Arabic narration failed; no unvoiced video will be published.")
+    # A successfully written WAV is not evidence of audible Arabic speech.
+    # Refuse silence, near-silence and severely clipped output before export.
+    import numpy as np
+    try:
+        with wave.open(str(wav), "rb") as audio:
+            if audio.getsampwidth() != 2 or audio.getnchannels() not in (1, 2):
+                raise ValueError("Unsupported PCM output")
+            duration = audio.getnframes() / audio.getframerate()
+            samples = np.frombuffer(audio.readframes(audio.getnframes()), dtype="<i2")
+        if not 3 <= duration <= 170 or not samples.size:
+            raise ValueError("Narration length is outside Shorts bounds")
+        absolute = np.abs(samples.astype(np.int32))
+        rms = float(np.sqrt(np.mean(samples.astype(np.float64) ** 2)))
+        clipped = float(np.mean(absolute >= 32750))
+        if rms < 70 or int(absolute.max()) < 500 or clipped > 0.15:
+            raise ValueError("Silent, too quiet or badly clipped voice")
+    except (OSError, EOFError, wave.Error, ValueError) as exc:
+        wav.unlink(missing_ok=True)
+        raise RuntimeError("Narration quality gate failed; no silent Short will be uploaded.") from exc
 
 
 def _duration(wav: Path) -> float:
