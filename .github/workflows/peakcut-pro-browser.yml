@@ -1,7 +1,7 @@
 name: PeakCut Pro Browser QA
 on:
   push:
-    branches: [feature/peakcut-pro-smart-highlights]
+    branches: [feature/peakcut-pro-smart-highlights, feature/peakcut-original-youtube-autopilot]
   workflow_dispatch:
   pull_request:
     branches: [main, feature/peakcut-pro-burgundy-studio-ui]
