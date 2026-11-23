@@ -166,6 +166,13 @@ def delete_account(uid: str) -> dict:
             raise Busy("A video is still being made. Wait for it to finish, then delete the account.")
         for j in mine:
             jobs.delete(j["id"])
+    # Cancel original-publication consent before deleting account records.
+    # A running renderer rechecks consent immediately before the upload.
+    try:
+        from . import original_youtube_settings
+        original_youtube_settings.forget(uid)
+    except (ValueError, RuntimeError, OSError) as exc:
+        raise Busy("The automated publishing settings could not be cleared. Retry account deletion.") from exc
     with db.engine.begin() as c:
         for t in reversed(db.meta.sorted_tables):
             if t.name != "users" and "user_id" in t.c:
