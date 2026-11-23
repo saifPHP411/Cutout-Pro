@@ -35,7 +35,8 @@ class OriginalYouTubeTests(unittest.TestCase):
         with patch.dict(os.environ, {auto.AUTO_FLAG: "0"}):
             with self.assertRaisesRegex(RuntimeError, "disabled"):
                 auto.require_publishing_config()
-        with patch.dict(os.environ, {auto.AUTO_FLAG: "1", auto.LICENSE_FLAG: "0"}):
+        with patch.dict(os.environ, {auto.AUTO_FLAG: "1", auto.LICENSE_FLAG: "0",
+                                      "PEAKCUT_ORIGINAL_BUILTIN_VOICE": "0"}):
             with self.assertRaisesRegex(RuntimeError, "commercial"):
                 auto.require_publishing_config()
 
