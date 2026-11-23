@@ -1520,6 +1520,32 @@ async function loadOriginalAutopilotView() {
       <p>Daily scheduler: ${st.enabled ? "Enabled for your owner ID" : "Disabled by default"}</p><p>New NASA/JPL data stream: ${st.live_jpl_enabled ? "Enabled" : "Off"} · ${st.live_episodes_published} live-data topics published</p>
       <p class="help">Your video is not published while setup is incomplete; this is intentional.</p>
     </section>
+    <section class="card auto-publish-controls">
+      <h2>Unattended YouTube publishing</h2>
+      ${st.managed_by_server ?
+        '<p class="help">This channel is already managed by the server configuration. Change its publication settings on the server.</p>'
+        : st.opted_in_from_app ? `
+          <p class="help">You authorized publishing from this connected YouTube account. The system checks the queue each day and skips when no original verified topic is available.</p>
+          <button class="btn danger" data-act="autodisable">Disable automated publishing</button>`
+        : linked.length ? `
+          <p class="help">One-time approval. After enabling, PeakCut may publish original science Shorts as public videos without asking for confirmation each day. You can disable it here at any time.</p>
+          <div class="fields">
+            <label class="f">Your YouTube channel
+              <select id="auto_account">${linked.map(a => `<option value="${esc(a.id)}" ${a.id === st.selected_account ? "selected" : ""}>${esc(a.name)}</option>`).join("")}</select>
+            </label>
+            <label class="f">Local publishing hour (Amman)
+              <select id="auto_hour">${[9,11,15,19,21].map(n => `<option value="${n}" ${Number(st.publish_hour_amman) === n ? "selected" : ""}>${n}:00</option>`).join("")}</select>
+            </label>
+          </div>
+          <label class="ck visual-triage-toggle" style="margin:14px 0;align-items:flex-start">
+            <input type="checkbox" id="auto_public_consent">
+            <span>I authorize unattended <b>public</b> uploads to this channel.
+              <small>I understand that the videos are automatically generated from validated scientific data, YouTube may reject repetitive content or monetization, and revenue is not guaranteed. The voice model publisher declares MIT, but its dataset rights have not been independently audited.</small>
+            </span>
+          </label>
+          <button class="btn primary" data-act="autoenable">Enable automatic publishing</button>`
+        : '<p class="help">Connect a YouTube account in Settings first. Google requires one-time account authorization and YouTube Partner Program acceptance by the channel owner.</p>'}
+    </section>
     <h2 style="margin:22px 0 12px">Verified pilot stories</h2>
     <div class="pro-grid original-episodes">${items}</div>`);
   } catch (err) {
@@ -2817,6 +2843,26 @@ document.addEventListener("click", async e => {
   if (b.tagName === "A") e.preventDefault();
   try {
     if (a === "autorefresh") return loadOriginalAutopilotView();
+    if (a === "autoenable") {
+      if (!$("#auto_public_consent")?.checked) return toast("Confirm public publishing before enabling.", "bad");
+      const account = $("#auto_account")?.value;
+      const hour = Number($("#auto_hour")?.value || 11);
+      if (!account) return toast("Connect and select your YouTube account first.", "bad");
+      b.disabled = true;
+      try {
+        await send("/api/original-youtube/config",
+                   {enabled:true, account_id:account, hour, confirm_public:true}, "PUT");
+        toast("Automatic YouTube publishing enabled for your channel.", "ok");
+        return loadOriginalAutopilotView();
+      } finally { b.disabled = false; }
+    }
+    if (a === "autodisable") {
+      if (!await ask("Disable automatic YouTube uploads?",
+                     "PeakCut will stop starting new public uploads for this account.", "Disable", true)) return;
+      await send("/api/original-youtube/config", {enabled:false, hour:11}, "PUT");
+      toast("Automatic publishing disabled.", "ok");
+      return loadOriginalAutopilotView();
+    }
     if (a === "morejobs") { S.jobLimit += 12; return drawJobs(); }
     if (a === "moreclips") { S.clipLimit += 24; return drawAllClips(); }
     if (a === "editcampaign") return campaignDialog((S.campaignRows || []).find(c => c.id === d.id));
