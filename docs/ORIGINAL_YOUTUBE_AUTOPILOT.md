@@ -85,43 +85,53 @@ records/APIs remain intact for users with old projects, but campaigns are
 5. Run local or ARM64 tests before enabling unattended publication:
    `python tests/test_original_youtube.py`, `python tests/run.py`.
 
-## One-time publish enablement (only after review)
+## One-time YouTube authorization, entirely from the phone
 
-Set these on **your own secure Oracle service**, never in a public repo:
-```ini
-PEAKCUT_ORIGINAL_AUTOPOST=1
-PEAKCUT_ORIGINAL_BUILTIN_VOICE=1
-PEAKCUT_ORIGINAL_LIVE_JPL=1
-PEAKCUT_ORIGINAL_USER_ID=<actual-owning-PeakCut-user-id>
-PEAKCUT_ORIGINAL_YOUTUBE_ACCOUNT=yt_<actual-channel-id>
-# Custom voices only: PEAKCUT_ORIGINAL_VOICE_MODEL=<absolute-path>
-# Custom voices only: PEAKCUT_ORIGINAL_VOICE_LICENSE_APPROVED=1
-```
-Manual one-shot command:
-`python tools/original_youtube_autopilot.py publish`.
+After the creator has reviewed the initial spoken Short and verified
+the channel's monetization eligibility and content rights:
 
-When PeakCut starts, its opt-in scheduler automatically checks once each day
-at **11 AM Asia/Amman** (overridable with `PEAKCUT_ORIGINAL_PUBLISH_HOUR_AMMAN`).
-No separate cron, subscription or GitHub Action is required. To run one check
-manually, use `python tools/original_youtube_autopilot.py publish` after
-configuring the same environment and OAuth. The production service must
-restart after those settings are set. The renderer creates source-
-original 1080×1920 Shorts and posts to the *explicit connected YouTube
-account* in the Education category. No campaign, third-party clips or
-Windsor.ai are required. It never chooses a random remote clip.
+1. In **Settings → Connected apps**, connect **your own** YouTube channel
+   through Google's official OAuth consent page. YouTube must authorize
+   access once; the program cannot bypass this or accept YPP/AdSense terms
+   for the channel owner.
+2. Open **YouTube Autopilot** in the main PeakCut sidebar.
+3. Select that linked YouTube account and the preferred daily publishing
+   hour in **Asia/Amman**. Read and check the explicit consent to unattended
+   **public** uploads, then press **Enable automatic publishing**.
+4. From that point the server remembers only the owner ID, connected channel
+   ID, local hour and consent timestamp in private persistent storage. **No
+   cron, shell, ENV edits, subscriptions or daily user clicks are required**.
+   It schedules itself while the PeakCut server is online and its storage
+   persists. The first action checks the current date, previous upload
+   ledger and YouTube authorization.
+5. To stop: open the same page, press **Disable automated publishing** and
+   confirm. Revoking consent while the video renders prevents the new
+   upload request from starting. Deleting a PeakCut account revokes and
+   removes its saved autopilot consent.
 
-It refuses to post if a custom voice lacks license approval (the built-in
-voice is allowed only while its pinned MIT-declared source is selected),
-the owner/account does not match, the voice renderer fails, the video export
-fails, NASA/JPL responses are invalid, or that UTC date has already
-attempted an upload. The upload
-ledger has an `upload_unknown` reservation to avoid duplicate uploads
-after a timeout; reconcile by visiting YouTube Studio rather than
-blindly retrying it.
+Only the signed-in owner who connected a YouTube account can authorize that
+account's automated uploads. The API rejects selecting another user's
+channel, enabling without an explicit confirmation, or invalid schedules.
+A synthetic end-to-end Chromium browser fixture verifies enable/disable
+without any real YouTube credentials or network upload.
 
-**Important:** the old PeakCut upload queue remains unchanged for clipping
-workflows. This autopilot is separate and cannot upload anything until
-an owner opts in. Its status is *staging, not deployed*.
+**For existing advanced deployments only:** The older
+`PEAKCUT_ORIGINAL_AUTOPOST=1` plus owner ID / YouTube account environment
+settings are still supported. An environment-managed owner cannot disable
+the publishing override through the web UI: switch off the service flag
+instead. Do not publish two conflicting configurations for the same owner.
+
+The scheduler checks once daily at the chosen Amman hour, and posts a unique
+original 1080×1920 H.264/AAC Short only if all source/voice/rights checks
+pass. If NASA data are unavailable, the model breaks, Google OAuth expires,
+the service is offline, or no suitable original topic exists, **the job
+skips rather than recycling or uploading a fabricated/poor-quality video**.
+The next eligible day is considered automatically. An ambiguous upload
+outcome is stored as `upload_unknown` and is never blindly retried.
+
+Because the publisher is a public-YouTube uploader, it remains **disabled
+by default**; it is not enabled automatically by opening or using the app.
+The existing clip queue/campaigns are independent and untouched.
 
 ## Next production acceptance gates
 
