@@ -96,6 +96,8 @@ def visit_and_check(browser, context_options, device):
         assert not checkbox.is_checked(), "Visual Highlights must be disabled by default"
         checkbox.check()
         assert page.evaluate("jobOptions().visual_triage") is True
+        # Desktop uses a short grid-height transition; capture only after it settles.
+        page.wait_for_timeout(400)
         assert_no_overflow(page)
         page.screenshot(path=str(ARTIFACTS / (device + "-create.png")), full_page=True)
 
@@ -120,6 +122,11 @@ def visit_and_check(browser, context_options, device):
         expect(modal.get_by_text("Editorial estimates")).to_be_visible()
         assert_no_overflow(page)
         page.screenshot(path=str(ARTIFACTS / (device + "-editor.png")), full_page=True)
+        # The modal must remain navigable past the video and long score explanation.
+        remake = modal.locator('[data-act="remake"]')
+        remake.scroll_into_view_if_needed(timeout=6000)
+        expect(remake).to_be_visible()
+        page.screenshot(path=str(ARTIFACTS / (device + "-editor-bottom.png")), full_page=True)
         page.keyboard.press("Escape")
         page.locator("#clip-filter").select_option("review")
         expect(page.locator(".clip")).to_have_count(1)
