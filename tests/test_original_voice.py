@@ -19,8 +19,8 @@ class VoiceBootstrapTests(unittest.TestCase):
         self.assertEqual(original_voice._fetch.__name__, "_fetch")
         with self.assertRaises(ValueError):
             original_voice._fetch("../../private/key")
-        self.assertFalse(original_voice.commercially_allowed(Path("/tmp/custom-piper.onnx"))
-                         if os.environ.get("PEAKCUT_ORIGINAL_VOICE_LICENSE_APPROVED") == "1" else False)
+        with patch.dict(os.environ, {"PEAKCUT_ORIGINAL_VOICE_LICENSE_APPROVED": "0"}):
+            self.assertFalse(original_voice.commercially_allowed(Path("/tmp/custom-piper.onnx")))
 
     def test_auto_setup_is_one_time_and_detects_model_tampering(self):
         with tempfile.TemporaryDirectory(prefix="pc-piper-voice-") as root:
