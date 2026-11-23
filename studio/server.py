@@ -1790,6 +1790,7 @@ def original_youtube_status():
         pending = sum(v.get("status") == "upload_unknown" for v in doc["episodes"].values())
         error = ""
     except (ValueError, RuntimeError, OSError):
+        doc = {"episodes": {}}
         published, pending, error = 0, 0, "Upload ledger needs attention."
     expected = config.env("PEAKCUT_ORIGINAL_YOUTUBE_ACCOUNT", "")
     model = config.env("PEAKCUT_ORIGINAL_VOICE_MODEL", "")
@@ -1797,7 +1798,12 @@ def original_youtube_status():
     licensed = config.env("PEAKCUT_ORIGINAL_VOICE_LICENSE_APPROVED", "0") == "1"
     episodes = original_shorts.catalog()
     count = len(episodes)
-    ready = active and licensed and voice and any(a["id"] == expected for a in linked) and not error and published < count
+    curated_published = sum(doc["episodes"].get(e["id"], {}).get("status") == "published" for e in episodes)
+    dynamic_published = sum(k.startswith("jpl-") and v.get("status") == "published"
+                            for k, v in doc["episodes"].items())
+    live_topics = config.env("PEAKCUT_ORIGINAL_LIVE_JPL", "1") == "1"
+    ready = (active and licensed and voice and any(a["id"] == expected for a in linked)
+             and not error and (curated_published < count or live_topics))
     return {"status": "ready" if ready else "setup_needed" if not error else "error",
             "enabled": active, "voice_configured": voice, "voice_license_confirmed": licensed,
             "owner_id": uid, "selected_account": expected if expected in [a["id"] for a in linked] else "",
@@ -1805,8 +1811,12 @@ def original_youtube_status():
             "episodes": [{"id": e["id"], "title": e["title"], "source": e["source"],
                           "status": doc.get("episodes", {}).get(e["id"], {}).get("status", "not_started")
                           if not error else "unknown"} for e in episodes],
-            "episodes_published": published, "upload_unknown": pending,
-            "error": error, "publish_hour_amman": config.env("PEAKCUT_ORIGINAL_PUBLISH_HOUR_AMMAN", "11")}
+            "episodes_published": curated_published, "curated_remaining": count - curated_published,
+            "total_published": published, "live_episodes_published": dynamic_published,
+            "live_jpl_enabled": live_topics, "live_source_name": "NASA/JPL SBDB",
+            "live_source_url": "https://ssd-api.jpl.nasa.gov/doc/cad.html",
+            "upload_unknown": pending, "error": error,
+            "publish_hour_amman": config.env("PEAKCUT_ORIGINAL_PUBLISH_HOUR_AMMAN", "11")}
 
 
 @app.get("/api/accounts")
