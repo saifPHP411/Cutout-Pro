@@ -1497,11 +1497,11 @@ async function loadOriginalAutopilotView() {
         <span class="pill ${enabled ? "ok" : "warn"}">${enabled ? "Configured for daily posting" : "Not publishing"}</span>
       </div>
       <div class="pro-grid" style="margin-top:15px">
-        <div><strong class="pro-kpi">${st.episodes_total - st.episodes_published}</strong><p class="sub">Pilot episodes remaining</p></div>
-        <div><strong class="pro-kpi">${st.episodes_published}</strong><p class="sub">Recorded as published</p></div>
+        <div><strong class="pro-kpi">${st.curated_remaining}</strong><p class="sub">Verified pilot episodes remaining</p></div>
+        <div><strong class="pro-kpi">${st.total_published}</strong><p class="sub">Total recorded as published</p></div>
         <div><strong class="pro-kpi">${esc(st.publish_hour_amman)}:00</strong><p class="sub">Daily check · Amman</p></div>
       </div>
-      <p class="help">The system stops when these four unique stories are used. YouTube Partner Program approval and monetized views are not automatic.</p>
+      <p class="help">After the four reviewed starter videos, it can discover distinct NASA/JPL asteroid-approach stories from verified numerical data (at most one per 10 days). If no suitable topic exists, it skips publishing. It does not promise a fresh Short every day or YPP approval.</p>
       ${st.upload_unknown ? `<p class="warnline">Some uploads may have reached YouTube. Verify them in YouTube Studio before any retry.</p>` : ""}
       ${st.error ? `<p class="warnline">${esc(st.error)}</p>` : ""}
       <div class="row" style="gap:10px;flex-wrap:wrap">
@@ -1515,7 +1515,7 @@ async function loadOriginalAutopilotView() {
       <p>YouTube channel: ${linked.length ? linked.map(a => esc(a.name)).join(", ") : "Not connected"}</p>
       <p>Offline Arabic voice: ${st.voice_configured ? "Installed" : "Needs a model"}</p>
       <p>Voice commercial license: ${st.voice_license_confirmed ? "Confirmed by owner" : "Needs confirmation"}</p>
-      <p>Daily scheduler: ${st.enabled ? "Enabled for your owner ID" : "Disabled by default"}</p>
+      <p>Daily scheduler: ${st.enabled ? "Enabled for your owner ID" : "Disabled by default"}</p><p>New NASA/JPL data stream: ${st.live_jpl_enabled ? "Enabled" : "Off"} · ${st.live_episodes_published} live-data topics published</p>
       <p class="help">Your video is not published while setup is incomplete; this is intentional.</p>
     </section>
     <h2 style="margin:22px 0 12px">Verified pilot stories</h2>
