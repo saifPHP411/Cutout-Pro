@@ -81,6 +81,9 @@ def _startup():
     jobs.start()
     live.start()
     posting.start()
+    # Separate source-original YouTube pipeline: disabled unless owner explicitly opts in.
+    from . import original_youtube_scheduler
+    original_youtube_scheduler.start()
     threading.Thread(target=alerts.monitor_jobs, daemon=True, name="job-alert-monitor").start()
     from . import updates
     updates.start()                  # looks for a newer PeakCut every minute, in the background
