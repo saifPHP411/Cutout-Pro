@@ -23,7 +23,7 @@ from . import config
 WIDTH, HEIGHT, FPS = 1080, 1920, 24
 ROOT = config.ROOT
 CATALOG = ROOT / "content" / "original_space_episodes.json"
-THEMES = {"sunlight", "moon", "venus", "mars"}
+THEMES = {"sunlight", "moon", "venus", "mars", "asteroid"}
 BG = (21, 12, 27)
 PINK = (234, 116, 170)
 WHITE = (255, 242, 249)
@@ -120,6 +120,26 @@ def _graphic(draw, theme: str, index: int):
             draw.arc((280, y - 50, 800, y + 110), start=8, end=172, fill=(255, 211, 153), width=10)
         draw.arc((175, 665, 905, 1395), start=35, end=318,
                  fill=PINK if index % 2 == 0 else (255, 189, 220), width=9)
+    elif theme == "asteroid":
+        # Original schematic, never a representation of a real asteroid image.
+        # Three stages illustrate a measured approach vs mean lunar distance.
+        draw.ellipse((105, 855, 455, 1205), fill=(38, 130, 211), outline=(127, 208, 251), width=12)
+        draw.arc((125, 770, 1060, 1460), 200, 348, fill=(146, 92, 164), width=7)
+        if index == 0:
+            draw.ellipse((790, 815, 985, 1010), fill=(165, 129, 106), outline=(218, 184, 143), width=9)
+            draw.ellipse((806, 846, 843, 884), fill=(118, 94, 81))
+            draw.ellipse((885, 925, 939, 968), fill=(114, 93, 82))
+        elif index == 1:
+            draw.ellipse((500, 888, 600, 988), fill=(177, 171, 183), outline=(235, 229, 236), width=5)
+            for i in range(6):
+                x = 615 + i * 47
+                draw.rounded_rectangle((x, 930, x + 26, 948), radius=6, fill=PINK)
+            draw.ellipse((920, 868, 1024, 972), fill=(170, 124, 93), outline=(238, 197, 135), width=7)
+        else:
+            draw.ellipse((764, 814, 1000, 1050), fill=(170, 126, 89), outline=(228, 187, 144), width=8)
+            for x in range(520, 744, 44):
+                draw.polygon([(x, 920), (x + 19, 935), (x, 950)], fill=PINK)
+            draw.line((500, 942, 752, 942), fill=PINK, width=8)
     elif theme == "mars":
         draw.ellipse((125, 835, 495, 1205), fill=(48, 143, 217), outline=(155, 214, 249), width=9)
         draw.ellipse((600, 900, 920, 1220), fill=(205, 97, 78), outline=(255, 160, 125), width=10)
