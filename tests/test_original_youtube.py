@@ -85,5 +85,31 @@ class OriginalYouTubeTests(unittest.TestCase):
             self.assertTrue(all(x["status"] == "published" for x in state["episodes"].values()))
 
 
+    def test_actual_views_sync_does_not_treat_missing_statistics_as_zero(self):
+        with tempfile.TemporaryDirectory(prefix="pc-original-views-") as root:
+            data = Path(root)
+            ledger_dir = data / auto.AUTO_DIR
+            auto._write_state(ledger_dir, {"episodes": {
+                "old": {"status": "published", "video_id": "abc", "verified_views": 105},
+                "recent": {"status": "published", "video_id": "def"},
+            }})
+            with patch.dict(os.environ, {
+                auto.AUTO_FLAG: "1", auto.LICENSE_FLAG: "1",
+                "PEAKCUT_ORIGINAL_USER_ID": "owner_q",
+                "PEAKCUT_ORIGINAL_YOUTUBE_ACCOUNT": "yt_qa",
+            }), patch.object(auto.config, "user_dir", return_value=data), \
+                 patch.object(auto.accounts, "get", return_value={"id": "yt_qa", "platform": "youtube"}), \
+                 patch.object(auto.accounts, "youtube_views", return_value={"abc": 1234}) as query:
+                result = auto.refresh_views()
+                self.assertEqual(result["updated"], 1)
+                self.assertEqual(result["unavailable"], 1)
+                query.assert_called_once()
+                state = auto._read_state(ledger_dir)
+                self.assertEqual(state["episodes"]["old"]["verified_views"], 1234)
+                self.assertNotIn("verified_views", state["episodes"]["recent"])
+                self.assertGreater(state["last_views_sync"], 0)
+
+
+
 if __name__ == "__main__":
     unittest.main()
