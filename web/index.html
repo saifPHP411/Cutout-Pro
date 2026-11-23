@@ -1513,8 +1513,8 @@ async function loadOriginalAutopilotView() {
     <section class="card">
       <h2>One-time setup status</h2>
       <p>YouTube channel: ${linked.length ? linked.map(a => esc(a.name)).join(", ") : "Not connected"}</p>
-      <p>Offline Arabic voice: ${st.voice_configured ? "Installed" : "Needs a model"}</p>
-      <p>Voice commercial license: ${st.voice_license_confirmed ? "Confirmed by owner" : "Needs confirmation"}</p>
+      <p>Offline Arabic voice: ${st.voice_configured ? "Installed" : st.voice_auto_setup ? "Free voice auto-download on first run" : "Not ready"}</p>
+      <p>Voice model license: ${st.voice_provider_declared_license ? "Provider declares " + esc(st.voice_provider_declared_license) : st.voice_license_confirmed ? "Custom license confirmed" : "Needs confirmation"}</p>
       <p>Daily scheduler: ${st.enabled ? "Enabled for your owner ID" : "Disabled by default"}</p><p>New NASA/JPL data stream: ${st.live_jpl_enabled ? "Enabled" : "Off"} · ${st.live_episodes_published} live-data topics published</p>
       <p class="help">Your video is not published while setup is incomplete; this is intentional.</p>
     </section>
@@ -2594,7 +2594,7 @@ async function originalChannelStatusCard() {
         <span>${connected.length ? connected.map(a => esc(a.name)).join(", ") : "Connect your YouTube channel above first."}</span>
         ${st.upload_unknown ? `<span class="warnline">There are ${st.upload_unknown} uncertain uploads. Check YouTube Studio for duplicates before proceeding.</span>` : ""}
         ${st.error ? `<span class="warnline">${esc(st.error)}</span>` : ""}
-        <span>Voice file: ${st.voice_configured ? "Configured" : "Missing"} · Commercial voice permission: ${st.voice_license_confirmed ? "Confirmed" : "Not confirmed"}</span>
+        <span>Offline voice: ${st.voice_configured ? "Installed" : st.voice_auto_setup ? "Auto-download available" : "Not ready"} · Model license: ${st.voice_provider_declared_license ? esc(st.voice_provider_declared_license) + " (publisher-declared)" : st.voice_license_confirmed ? "Custom model approved" : "Unconfirmed"}</span>
         <span class="sub">Your PeakCut owner ID (for one-time server configuration): <code>${esc(st.owner_id)}</code></span>
         ${connected.length ? `<span class="sub">Account ID: <code>${esc(connected[0].id)}</code></span>` : ""}
       </div>
