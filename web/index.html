@@ -1499,9 +1499,11 @@ async function loadOriginalAutopilotView() {
       <div class="pro-grid" style="margin-top:15px">
         <div><strong class="pro-kpi">${st.curated_remaining}</strong><p class="sub">Verified pilot episodes remaining</p></div>
         <div><strong class="pro-kpi">${st.total_published}</strong><p class="sub">Total recorded as published</p></div>
+        <div><strong class="pro-kpi">${st.verified_views == null ? "—" : Number(st.verified_views).toLocaleString()}</strong><p class="sub">Verified YouTube views ${st.views_unavailable_count ? "(partial data)" : ""}</p></div>
         <div><strong class="pro-kpi">${esc(st.publish_hour_amman)}:00</strong><p class="sub">Daily check · Amman</p></div>
       </div>
       <p class="help">After the four reviewed starter videos, it can discover distinct NASA/JPL asteroid-approach stories from verified numerical data (at most one per 10 days). If no suitable topic exists, it skips publishing. It does not promise a fresh Short every day or YPP approval.</p>
+      <p class="help">Ad earnings: unavailable here until YouTube approves monetization and provides revenue data. Views are not equivalent to money. Check YouTube Studio → Earn.</p>
       ${st.upload_unknown ? `<p class="warnline">Some uploads may have reached YouTube. Verify them in YouTube Studio before any retry.</p>` : ""}
       ${st.error ? `<p class="warnline">${esc(st.error)}</p>` : ""}
       <div class="row" style="gap:10px;flex-wrap:wrap">
