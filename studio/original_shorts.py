@@ -95,8 +95,130 @@ def _rtl(draw, value, x, y, size, fill=WHITE, bold=True, max_width=880, spacing=
     return y + len(lines) * step
 
 
+def _draw_science_storyboard(draw, theme: str, index: int):
+    """One distinct, hand-coded science diagram for *each* narrative scene.
+
+    Every element is original Pillow geometry, based on the scene's physical
+    concept, not a recolored reuse of someone else's visual asset.
+    """
+    line = (243, 143, 192)
+    pale = (226, 205, 224)
+    earth = (57, 145, 212)
+    moon = (183, 179, 193)
+    sun = (255, 164, 72)
+
+    def globe(x, y, rad, color, edge):
+        draw.ellipse((x-rad, y-rad, x+rad, y+rad), fill=color, outline=edge, width=10)
+
+    def dashed(a, b, segments=11, color=line, thick=10):
+        for j in range(segments):
+            fraction = j / segments
+            stop = min(1, fraction + 0.055)
+            draw.line((round(a[0]+(b[0]-a[0])*fraction),
+                       round(a[1]+(b[1]-a[1])*fraction),
+                       round(a[0]+(b[0]-a[0])*stop),
+                       round(a[1]+(b[1]-a[1])*stop)), fill=color, width=thick)
+
+    if theme == "sunlight":
+        if index == 0:
+            globe(280, 990, 170, sun, (255, 223, 119))
+            globe(850, 990, 81, earth, (145, 218, 250))
+            dashed((468, 990), (759, 990), color=(251, 177, 115))
+            for j in range(8):
+                x = 160 + j * 45
+                draw.arc((x, 800, x+115, 1190), 220, 300, fill=(222, 119, 97), width=5)
+        elif index == 1:
+            globe(220, 915, 108, sun, (255, 226, 136))
+            globe(865, 915, 85, earth, (147, 219, 249))
+            draw.line((350, 1020, 785, 1020), fill=line, width=11)
+            for j in range(12):
+                x = 350 + j * 39
+                draw.line((x, 995, x, 1050), fill=pale, width=6)
+            _rtl(draw, "١٥٠ مليون كيلومتر تقريباً", 915, 1120, 50, WHITE, max_width=800)
+        else:
+            globe(205, 1000, 86, sun, (255, 220, 105))
+            globe(880, 1000, 67, earth, (142, 212, 250))
+            draw.ellipse((345, 795, 755, 1205), fill=(42, 27, 55), outline=line, width=17)
+            for x1,y1,x2,y2 in ((550,820,550,858),(550,1142,550,1180),
+                                (366,1000,410,1000),(690,1000,734,1000)):
+                draw.line((x1,y1,x2,y2),fill=pale,width=9)
+            draw.line((550,1000,550,890),fill=(255,219,150),width=17)
+            draw.line((550,1000,640,1048),fill=(255,219,150),width=14)
+            draw.ellipse((535,985,565,1015),fill=line)
+            _rtl(draw, "٨ دقائق و٢٠ ثانية", 755, 1240, 45, WHITE, max_width=800)
+
+    elif theme == "moon":
+        if index == 0:
+            globe(300, 1000, 175, earth, (137, 206, 252))
+            globe(820, 1000, 103, moon, (234, 227, 236))
+            dashed((490, 1000), (695, 1000), color=line)
+        elif index == 1:
+            globe(210, 1000, 115, earth, (137, 209, 250))
+            globe(885, 1000, 78, moon, (236, 231, 239))
+            draw.line((350, 980, 777, 980), fill=line, width=12)
+            for j in range(9):
+                x=360+j*50
+                draw.line((x,950,x,1015),fill=(204,185,216),width=6)
+            _rtl(draw, "٣٨٤ ألف كيلومتر", 900, 1160, 50, WHITE)
+        else:
+            globe(205, 990, 95, earth, (132, 212, 250))
+            globe(875, 990, 95, moon, (230, 223, 238))
+            draw.arc((290, 795, 792, 1080), 180, 355, fill=(251, 184, 123), width=14)
+            draw.arc((290, 935, 792, 1225), 5, 180, fill=line, width=14)
+            draw.polygon([(803,926),(762,897),(775,948)],fill=(251,184,123))
+            draw.polygon([(275,1116),(314,1085),(305,1145)],fill=line)
+            _rtl(draw, "ذهاب + عودة", 760, 1215, 52, WHITE)
+
+    elif theme == "venus":
+        if index == 0:
+            globe(545, 1000, 235, (219, 144, 91), (255, 199, 127))
+            for j in range(5):
+                y=800+j*85
+                draw.arc((330,y-65,760,y+65), 20, 162,
+                         fill=(253, 204, 143), width=12)
+        elif index == 1:
+            globe(540, 990, 100, (254, 179, 78), (255, 223, 131))
+            draw.ellipse((185, 685, 890, 1295), outline=line, width=13)
+            draw.ellipse((330, 815, 760, 1155), outline=(201, 161, 207), width=11)
+            globe(770, 1060, 70, (230, 150, 88), (253, 208, 147))
+            draw.polygon([(816,1192),(772,1168),(780,1222)],fill=line)
+        else:
+            draw.rounded_rectangle((155, 850, 480, 1130), radius=45, fill=(63, 33, 72), outline=line, width=12)
+            draw.rounded_rectangle((605, 850, 930, 1130), radius=45, fill=(63, 33, 72), outline=(251, 191, 119), width=12)
+            _rtl(draw, "٢٤٣", 425, 895, 103, WHITE, max_width=250)
+            _rtl(draw, "٢٢٥", 874, 895, 103, WHITE, max_width=250)
+            _rtl(draw, "دوران محوري", 450, 1180, 41, WHITE, max_width=300)
+            _rtl(draw, "دوران شمسي", 925, 1180, 41, WHITE, max_width=300)
+
+    elif theme == "mars":
+        if index == 0:
+            globe(290, 1000, 177, earth, (150, 221, 252))
+            globe(820, 1000, 145, (211, 105, 80), (252, 174, 143))
+            draw.line((465, 1040, 666, 1040),fill=line,width=11)
+        elif index == 1:
+            globe(255, 1125, 116, earth, (142, 216, 253))
+            globe(825, 1125, 112, (205, 99, 74), (252, 173, 140))
+            for x,top,bottom in ((255,740,980),(825,870,1015)):
+                draw.line((x,top,x,bottom),fill=line,width=13)
+                draw.polygon([(x-28,bottom-28),(x+28,bottom-28),(x,bottom+18)],fill=line)
+            _rtl(draw, "٣٨٪ من جاذبية الأرض", 865, 1260, 43, WHITE)
+        else:
+            globe(280, 1160, 110, earth, (148, 211, 250))
+            globe(850, 1160, 104, (205, 98, 78), (246, 166, 131))
+            draw.arc((110, 750, 540, 1200), 185, 345, fill=(248, 199, 120), width=12)
+            draw.arc((655, 850, 1050, 1200), 190, 344, fill=line, width=12)
+            draw.ellipse((375,840,410,875),fill=(248,199,120))
+            draw.ellipse((950,950,986,986),fill=line)
+
+    draw.rounded_rectangle((105, 1365, 975, 1390), radius=12, fill=(62, 35, 70))
+    draw.rounded_rectangle((105, 1365, 260 + index * 280, 1390), radius=12, fill=PINK)
+
+
 def _graphic(draw, theme: str, index: int):
     """Distinct, self-drawn educational diagrams, not NASA image reuploads."""
+    if theme in {"sunlight", "moon", "venus", "mars"}:
+        _draw_science_storyboard(draw, theme, index)
+        return
     cx = 540
     if theme == "sunlight":
         draw.ellipse((95, 760, 460, 1125), fill=(255, 165, 67), outline=(255, 205, 91), width=12)
