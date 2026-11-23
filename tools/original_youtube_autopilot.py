@@ -98,7 +98,7 @@ def publish_once(voice: Path, requested: str = "", *, today: str | None = None):
     with (root / "publish.lock").open("a+") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         state = _read_state(root)
-        if state.get("last_post_utc") == now:
+        if state.get("last_post_utc") == now or state.get("last_attempt_utc") == now:
             return {"status": "daily_limit", "date": now}
         episode = pick(episodes, state, requested)
         if not episode:
@@ -113,6 +113,7 @@ def publish_once(voice: Path, requested: str = "", *, today: str | None = None):
             # rather than accidentally uploading a duplicate.
             state["episodes"][episode["id"]] = {"status": "upload_unknown", "started": time.time(),
                                                   "title": episode["title"]}
+            state["last_attempt_utc"] = now
             _write_state(root, state)
             try:
                 remote_id, url = accounts.youtube_upload(
