@@ -1792,7 +1792,8 @@ def original_youtube_status():
     except (ValueError, RuntimeError, OSError):
         published, pending, error = 0, 0, "Upload ledger needs attention."
     expected = config.env("PEAKCUT_ORIGINAL_YOUTUBE_ACCOUNT", "")
-    voice = bool(config.env("PEAKCUT_ORIGINAL_VOICE_MODEL", ""))
+    model = config.env("PEAKCUT_ORIGINAL_VOICE_MODEL", "")
+    voice = bool(model and Path(model).is_file() and Path(model + ".json").is_file() and shutil.which("piper"))
     licensed = config.env("PEAKCUT_ORIGINAL_VOICE_LICENSE_APPROVED", "0") == "1"
     count = len(original_shorts.catalog())
     ready = active and licensed and voice and any(a["id"] == expected for a in linked) and not error and published < count
