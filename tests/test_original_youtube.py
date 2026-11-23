@@ -14,7 +14,7 @@ from PIL import Image
 sys.path.insert(0, ".")
 os.environ["PEAKCUT_DATA"] = tempfile.mkdtemp(prefix="pc-original-science-")
 os.environ["DATABASE_URL"] = ""
-from studio import original_shorts  # noqa: E402
+from studio import original_shorts, original_voice, original_youtube_settings, original_youtube_scheduler  # noqa: E402
 from tools import original_youtube_autopilot as auto  # noqa: E402
 
 
@@ -117,6 +117,62 @@ class OriginalYouTubeTests(unittest.TestCase):
                 self.assertEqual(state["episodes"]["old"]["verified_views"], 1234)
                 self.assertNotIn("verified_views", state["episodes"]["recent"])
                 self.assertGreater(state["last_views_sync"], 0)
+
+
+
+    def test_in_app_owner_consent_is_private_opt_in_and_cancellable(self):
+        with tempfile.TemporaryDirectory(prefix="pc-inapp-consent-") as folder:
+            root = Path(folder)
+            with patch.object(original_youtube_settings, "_FILE", root / "consent.json"), \
+                 patch.dict(os.environ, {
+                     "PEAKCUT_ORIGINAL_AUTOPOST": "0",
+                     "PEAKCUT_ORIGINAL_BUILTIN_VOICE": "1",
+                     "PEAKCUT_ORIGINAL_VOICE_LICENSE_APPROVED": "0",
+                 }):
+                self.assertFalse(original_youtube_settings.get("owner-A")["enabled"])
+                original_youtube_settings.set_owner("owner-A", enabled=True,
+                                                     account_id="yt_owner_channel", hour=15)
+                own = original_youtube_settings.get("owner-A")
+                other = original_youtube_settings.get("owner-B")
+                self.assertTrue(own["enabled"])
+                self.assertEqual(own["account_id"], "yt_owner_channel")
+                self.assertEqual(own["hour"], 15)
+                self.assertFalse(other["enabled"])
+                self.assertEqual(original_youtube_scheduler._targets(),
+                                 [("owner-A", 15, "owner-A")])
+                with self.assertRaises(ValueError):
+                    original_youtube_settings.set_owner("owner-B", enabled=True,
+                                                         account_id="yt_other", hour=True)
+                original_youtube_settings.set_owner("owner-A", enabled=False)
+                self.assertFalse(original_youtube_settings.get("owner-A")["enabled"])
+                self.assertEqual(original_youtube_scheduler._targets(), [])
+
+    def test_revoked_in_app_consent_stops_new_upload_even_after_video_render(self):
+        with tempfile.TemporaryDirectory(prefix="pc-inapp-revoke-") as folder:
+            root = Path(folder)
+            owner = "owner-demo"
+            voice = original_voice.default_model()
+            with patch.object(original_youtube_settings, "_FILE", root / "consent.json"), \
+                 patch.object(auto.config, "user_dir", return_value=root), \
+                 patch.dict(os.environ, {
+                     "PEAKCUT_ORIGINAL_AUTOPOST": "0",
+                     "PEAKCUT_ORIGINAL_BUILTIN_VOICE": "1",
+                     "PEAKCUT_ORIGINAL_VOICE_LICENSE_APPROVED": "0",
+                 }):
+                original_youtube_settings.set_owner(owner, enabled=True,
+                                                     account_id="yt_owner_demo", hour=11)
+                def render_then_revoke(*_args):
+                    original_youtube_settings.set_owner(owner, enabled=False)
+                    return root / "mock-video.mp4"
+                with patch.object(auto.accounts, "get", return_value={
+                      "id":"yt_owner_demo", "platform":"youtube", "name":"Mock"}), \
+                     patch.object(auto, "render_episode", side_effect=render_then_revoke), \
+                     patch.object(auto.accounts, "youtube_upload") as upload:
+                    result = auto.publish_once(voice, today="2026-11-23", owner_id=owner)
+                    self.assertEqual(result["status"], "disabled_during_render")
+                    upload.assert_not_called()
+                with self.assertRaisesRegex(RuntimeError, "disabled"):
+                    auto.require_publishing_config(voice, owner_id=owner)
 
 
 
