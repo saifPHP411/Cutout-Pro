@@ -45,7 +45,10 @@ def main() -> int:
         else:
             print("The test server did not start.")
             return 1
-        runs = [("smart highlights and visual motion", ["tests/test_smart_highlights.py"]),
+        runs = [("free offline Arabic voice automatic setup", ["tests/test_original_voice.py"]),
+                ("NASA/JPL scientific data validation and unique topics", ["tests/test_space_data.py"]),
+                ("original Arabic YouTube Shorts, quality and posting safety", ["tests/test_original_youtube.py"]),
+                ("smart highlights and visual motion", ["tests/test_smart_highlights.py"]),
                 ("burgundy UI tokens and mobile controls", ["tests/test_ui_theme.py"]),
                 ("permissions", ["tests/test_permissions.py", BASE, str(ROOT), sys.executable]),
                 ("abuse and limits", ["tests/test_abuse.py", BASE, str(ROOT)]),

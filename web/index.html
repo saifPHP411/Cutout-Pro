@@ -1004,6 +1004,16 @@ label.visual-triage-toggle span{display:block;flex:1;min-width:0;overflow-wrap:a
 label.visual-triage-toggle small{display:block;margin-top:5px;color:var(--dim);
   font-size:12px;font-weight:400;line-height:1.5;white-space:normal;overflow-wrap:anywhere}
 label.visual-triage-toggle:has(input:checked) small{color:#E6C6DB}
+
+/* Original YouTube Autopilot: a primary workspace, not a campaign dashboard */
+.auto-summary{border:1px solid #8E4D78;background:linear-gradient(145deg,#29172C,#18101D)}
+.auto-summary .pro-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.auto-summary .pro-grid>div{padding:14px;border-radius:12px;background:#2D1B34}
+.original-episodes{grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))}
+.auto-episode{min-height:115px;justify-content:space-between}
+.auto-episode .row{flex-wrap:wrap}
+@media(max-width:560px){.auto-summary .pro-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .auto-summary .pro-grid>div:last-child{grid-column:1/-1}}
 </style>
 </head>
 <body>
@@ -1466,6 +1476,83 @@ function drawAllClips() {
     ${available.length > S.clipLimit ? '<div class="pro-actions"><button class="btn" data-act="moreclips">Show more clips</button></div>' : ""}`
     : '<p class="help">No clips match this filter yet.</p>'));
 }
+async function loadOriginalAutopilotView() {
+  const root = $("#autopilot-view"); if (!root) return;
+  try {
+    const st = await api("/api/original-youtube/status");
+    if (S.view !== "autopilot") return;
+    const linked = st.youtube_accounts || [];
+    const enabled = st.enabled && st.status === "ready";
+    const items = (st.episodes || []).map((e, i) => `<article class="card auto-episode">
+      <div class="row" style="align-items:center;justify-content:space-between;gap:12px">
+        <b>${i + 1}. ${esc(e.title)}</b>
+        <span class="pill ${e.status === "published" ? "ok" : e.status === "upload_unknown" ? "warn" : ""}">${esc(e.status === "published" ? "Published" : e.status === "upload_unknown" ? "Check YouTube" : "Queued topic")}</span>
+      </div>
+      <a class="lnk" href="${esc(e.source)}" target="_blank" rel="noopener">Scientific source · NASA</a>
+    </article>`).join("");
+    put(root, `<div class="card auto-summary">
+      <div class="row" style="align-items:center;gap:12px;justify-content:space-between;flex-wrap:wrap">
+        <div><h2 style="margin:0 0 8px">Original Arabic science Shorts</h2>
+          <p class="help">No influencer clips, paid campaigns, or paid creative API. Original animations, offline Arabic narration, and YouTube ad revenue if the channel qualifies.</p></div>
+        <span class="pill ${enabled ? "ok" : "warn"}">${enabled ? "Configured for daily posting" : "Not publishing"}</span>
+      </div>
+      <div class="pro-grid" style="margin-top:15px">
+        <div><strong class="pro-kpi">${st.curated_remaining}</strong><p class="sub">Verified pilot episodes remaining</p></div>
+        <div><strong class="pro-kpi">${st.total_published}</strong><p class="sub">Total recorded as published</p></div>
+        <div><strong class="pro-kpi">${st.verified_views == null ? "—" : Number(st.verified_views).toLocaleString()}</strong><p class="sub">Verified YouTube views ${st.views_unavailable_count ? "(partial data)" : ""}</p></div>
+        <div><strong class="pro-kpi">${esc(st.publish_hour_amman)}:00</strong><p class="sub">Daily check · Amman</p></div>
+      </div>
+      <p class="help">After the four reviewed starter videos, it can discover distinct NASA/JPL asteroid-approach stories from verified numerical data (at most one per 10 days). If no suitable topic exists, it skips publishing. It does not promise a fresh Short every day or YPP approval.</p>
+      <p class="help">Ad earnings: unavailable here until YouTube approves monetization and provides revenue data. Views are not equivalent to money. Check YouTube Studio → Earn.</p>
+      ${st.upload_unknown ? `<p class="warnline">Some uploads may have reached YouTube. Verify them in YouTube Studio before any retry.</p>` : ""}
+      ${st.error ? `<p class="warnline">${esc(st.error)}</p>` : ""}
+      <div class="row" style="gap:10px;flex-wrap:wrap">
+        <button class="btn primary" data-act="go" data-v="settings" data-tab="apps">Connect YouTube / check setup</button>
+        <button class="btn" data-act="autorefresh">Refresh status</button>
+        <a class="btn" href="https://github.com/saifPHP411/Cutout-Pro/blob/feature/peakcut-original-youtube-autopilot/docs/ORIGINAL_YOUTUBE_AUTOPILOT.md" target="_blank" rel="noopener">Free setup guide</a>
+      </div>
+    </div>
+    <section class="card">
+      <h2>One-time setup status</h2>
+      <p>YouTube channel: ${linked.length ? linked.map(a => esc(a.name)).join(", ") : "Not connected"}</p>
+      <p>Offline Arabic voice: ${st.voice_configured ? "Installed" : st.voice_auto_setup ? "Free voice auto-download on first run" : "Not ready"}</p>
+      <p>Voice model license: ${st.voice_provider_declared_license ? "Provider declares " + esc(st.voice_provider_declared_license) : st.voice_license_confirmed ? "Custom license confirmed" : "Needs confirmation"}</p>
+      <p>Daily scheduler: ${st.enabled ? "Enabled for your owner ID" : "Disabled by default"}</p><p>New NASA/JPL data stream: ${st.live_jpl_enabled ? "Enabled" : "Off"} · ${st.live_episodes_published} live-data topics published</p>
+      <p class="help">Your video is not published while setup is incomplete; this is intentional.</p>
+    </section>
+    <section class="card auto-publish-controls">
+      <h2>Unattended YouTube publishing</h2>
+      ${st.managed_by_server ?
+        '<p class="help">This channel is already managed by the server configuration. Change its publication settings on the server.</p>'
+        : st.opted_in_from_app ? `
+          <p class="help">You authorized publishing from this connected YouTube account. The system checks the queue each day and skips when no original verified topic is available.</p>
+          <button class="btn danger" data-act="autodisable">Disable automated publishing</button>`
+        : linked.length ? `
+          <p class="help">One-time approval. After enabling, PeakCut may publish original science Shorts as public videos without asking for confirmation each day. You can disable it here at any time.</p>
+          <div class="fields">
+            <label class="f">Your YouTube channel
+              <select id="auto_account">${linked.map(a => `<option value="${esc(a.id)}" ${a.id === st.selected_account ? "selected" : ""}>${esc(a.name)}</option>`).join("")}</select>
+            </label>
+            <label class="f">Local publishing hour (Amman)
+              <select id="auto_hour">${[9,11,15,19,21].map(n => `<option value="${n}" ${Number(st.publish_hour_amman) === n ? "selected" : ""}>${n}:00</option>`).join("")}</select>
+            </label>
+          </div>
+          <label class="ck visual-triage-toggle" style="margin:14px 0;align-items:flex-start">
+            <input type="checkbox" id="auto_public_consent">
+            <span>I authorize unattended <b>public</b> uploads to this channel.
+              <small>I understand that the videos are automatically generated from validated scientific data, YouTube may reject repetitive content or monetization, and revenue is not guaranteed. The voice model publisher declares MIT, but its dataset rights have not been independently audited.</small>
+            </span>
+          </label>
+          <button class="btn primary" data-act="autoenable">Enable automatic publishing</button>`
+        : '<p class="help">Connect a YouTube account in Settings first. Google requires one-time account authorization and YouTube Partner Program acceptance by the channel owner.</p>'}
+    </section>
+    <h2 style="margin:22px 0 12px">Verified pilot stories</h2>
+    <div class="pro-grid original-episodes">${items}</div>`);
+  } catch (err) {
+    put(root, `<div class="card"><h2>Original YouTube Autopilot</h2><p class="sub">${esc(err.message)}</p></div>`);
+  }
+}
+
 async function loadProView(view) {
   const root = $("#pro-view"); if (!root) return;
   try {
@@ -1563,7 +1650,7 @@ function drawShell() {  const nav = (v, icon, label, extra = "") => `<button cla
     nav("library", navIc("film", "library"), "Jobs", (() => { const w = S.jobs.filter(j => ["queued", "running"].includes(j.status)).length;
       return w ? `<span class="working" title="${w} working now"><i></i>${w} working</span>` : S.jobs.length ? `<span class="count">${S.jobs.length}</span>` : ""; })()) +
     nav("clips", ic("scissors"), "Clips") +
-    nav("campaigns", ic("folder"), "Campaigns") +
+    nav("autopilot", ic("bolt"), "YouTube Autopilot") +
     nav("analytics", ic("clock"), "Analytics") +
     `<h4><span>Creators</span></h4>` +
     S.creators.map(c => nav("c:" + c.id, cav(c), c.name,
@@ -1580,7 +1667,7 @@ function drawShell() {  const nav = (v, icon, label, extra = "") => `<button cla
       <button class="icon-btn bell" data-act="bell" title="Notifications" aria-label="Notifications${S.status.unread ? `, ${S.status.unread} new` : ""}" aria-haspopup="dialog">${ic("bell")}${S.status.unread ? `<span class="dotn">${S.status.unread > 9 ? "9+" : S.status.unread}</span>` : ""}</button></div>` : ""));
   const c = creator();
   const recording = S.creators.filter(x => x.live_job).length;
-  let title = {overview:"Home", library:"Jobs", clips:"Clips", campaigns:"Campaigns", analytics:"Analytics", settings:"Settings", usage:"AI usage"}[S.view] || "", sub = "", act = "";
+  let title = {overview:"Home", library:"Jobs", clips:"Clips", autopilot:"YouTube Autopilot", campaigns:"Campaigns", analytics:"Analytics", settings:"Settings", usage:"AI usage"}[S.view] || "", sub = "", act = "";
   if (S.view === "usage") sub = "What the AI has been used for.";
   if (S.view === "overview") sub = `${greeting()}. ${S.creators.length} creator${S.creators.length === 1 ? "" : "s"}${recording ? `, ${recording} recording now` : ""}.`;
   if (S.view === "library") sub = "Every video and recording, across all creators.";
@@ -1609,16 +1696,16 @@ function drawShell() {  const nav = (v, icon, label, extra = "") => `<button cla
   const upBar = up && up.latest !== upSeen ? `<div class="vb" role="status">${ic("up")}<span>${up.restart ? "<b>The new version is downloaded.</b> Close PeakCut and start it again to use it." : `A new version of PeakCut is out${up.behind ? `: <b>${up.behind} update${up.behind === 1 ? "" : "s"}</b> since yours` : ""}.`}</span>
     <button class="btn sm primary" data-act="updhow">${up.restart ? "What's new" : "How to update"}</button><button class="btn sm ghost" data-act="updlater" aria-label="Hide until the next version">Later</button></div>` : "";
   const toolBar = S.status.no_ffmpeg ? `<div class="vb" role="alert">${ic("warn")}<span><b>PeakCut can't make clips yet: ffmpeg isn't installed on this computer.</b> Open a terminal, run <code>winget install Gyan.FFmpeg</code> (Mac: <code>brew install ffmpeg</code>, Linux: <code>sudo apt install ffmpeg</code>), then close PeakCut and start it again.</span></div>` : "";
-  const aiBar = !toolBar && S.status.ai?.problem && me?.is_admin && S.view !== "settings" ? `<div class="vb" role="status">${ic("warn")}<span><b>The AI isn't answering.</b> ${esc(S.status.ai.problem)} Until then, clips are picked by loudness.</span><button class="btn sm primary" data-act="go" data-v="settings" data-tab="ai">Open AI settings</button></div>` : "";
+  const aiBar = !toolBar && S.status.ai?.problem && me?.is_admin && S.view !== "settings" && S.view !== "autopilot" ? `<div class="vb" role="status">${ic("warn")}<span><b>The AI isn't answering.</b> ${esc(S.status.ai.problem)} Until then, clips are picked by loudness.</span><button class="btn sm primary" data-act="go" data-v="settings" data-tab="ai">Open AI settings</button></div>` : "";
   const diskBar = !toolBar && S.status.disk_full && S.view !== "settings" ? `<div class="vb" role="alert">${ic("warn")}<span><b>The drive PeakCut saves to is almost full, so it can't take new videos.</b> Free up space on it, or move PeakCut's folder to a bigger drive.</span>${me?.is_admin ? `<button class="btn sm primary" data-act="go" data-v="settings" data-tab="storage">Open Storage</button>` : ""}</div>` : "";
   put($("#vbanner"), toolBar ? toolBar : diskBar ? diskBar : aiBar ? aiBar : upBar ? upBar : me && me.verified === false ? `<div class="vb" role="status">${ic("warn")}<span>Confirm your email to start clipping. We sent a link to <b>${esc(me.email)}</b>.</span><button class="btn sm" data-act="resendverify">Send a new link</button></div>`
-    : kk && kk.ready === false && S.view !== "usage" ? `<div class="vb" role="status">${ic("bolt")}<span>${me?.is_admin ? "Add your AI key to let the AI pick clips and write titles. Until then, clips are picked by loudness." : "The AI isn't set up on this server yet, so clips are picked by loudness."}</span>${me?.is_admin && S.view !== "settings" ? `<button class="btn sm primary" data-act="go" data-v="settings" data-tab="ai">${ic("plus")}Add AI key</button>` : ""}</div>` : "");
+    : kk && kk.ready === false && S.view !== "usage" && S.view !== "autopilot" ? `<div class="vb" role="status">${ic("bolt")}<span>${me?.is_admin ? "Add your AI key to let the AI pick clips and write titles. Until then, clips are picked by loudness." : "The AI isn't set up on this server yet, so clips are picked by loudness."}</span>${me?.is_admin && S.view !== "settings" ? `<button class="btn sm primary" data-act="go" data-v="settings" data-tab="ai">${ic("plus")}Add AI key</button>` : ""}</div>` : "");
   put($("#tpic"), pic); $("#tpic").classList.toggle("live", !!(c && (c.live_job || liveOn(c).length)));
   put($("#utabs"), tabs); moveInd(); $(".topbar").classList.toggle("tabbed", !!tabs);
   put($("#title"), `<span>${esc(title)}</span>`); put($("#subtitle"), subHtml ?? esc(sub)); put($("#actions"), act);
 }
 
-const ROUTES = {overview: "", library: "videos", clips: "clips", campaigns: "campaigns", analytics: "analytics", settings: "settings", usage: "usage"};
+const ROUTES = {overview: "", library: "videos", clips: "clips", autopilot: "autopilot", campaigns: "campaigns", analytics: "analytics", settings: "settings", usage: "usage"};
 function pathFor(v, tab) {
   if (v.startsWith("c:")) return `/app/creators/${encodeURIComponent(v.slice(2))}${tab && tab !== "clips" ? "/" + tab : ""}`;
   if (v === "settings") return "/app/settings" + (tab ? "/" + tab : "");
@@ -1652,6 +1739,7 @@ function go(v, tab, fromHistory) {
   if (v === "overview") view.innerHTML = `<div id="ov"></div>`;
   else if (v === "library") view.innerHTML = `<div id="add"></div><div id="jobs"></div>`;
   else if (v === "clips") view.innerHTML = `<div id="allclips"></div>`;
+  else if (v === "autopilot") { view.innerHTML = '<div id="autopilot-view"></div>'; loadOriginalAutopilotView(); }
   else if (v === "campaigns" || v === "analytics") { view.innerHTML = '<div id="pro-view"></div>'; loadProView(v); }
   else if (v === "settings") view.innerHTML = `<div id="sform"></div>`;
   else if (v === "usage") { view.innerHTML = `<div id="usage"></div>`; loadUsage(); }
@@ -2515,10 +2603,35 @@ async function drawSettings() {
           ${card("youtube", "YouTube", yt, "#FF0000", "Post clips to your channel as Shorts.")}
           ${card("instagram", "Instagram", ig, "linear-gradient(45deg,#F58529,#DD2A7B,#8134AF)", "Post clips as Reels. Needs a Creator or Business account.")}
           ${card("tiktok", "TikTok", tt, "#000", "Post clips straight to your TikTok.")}
-        </div></section>${admin ? await ytCookiesCard(yt) : ""}`;
+        </div></section>${await originalChannelStatusCard()}${admin ? await ytCookiesCard(yt) : ""}`;
     }
   } catch (e) { body.innerHTML = `<div class="set-load">${esc(e.message)}</div>`; }
 }
+async function originalChannelStatusCard() {
+  const st = await api("/api/original-youtube/status").catch(() => null);
+  if (!st) return "";
+  const connected = st.youtube_accounts || [];
+  const status = st.enabled ? (st.status === "ready" ? "Enabled" : "Check setup") : "Off until enabled";
+  return `<section class="set-sec original-channel">
+    <h2>Original YouTube Autopilot</h2>
+    <p class="help">A separate, campaign-free channel for Arabic space explainers. Original science diagrams and offline narration; the intended income is YouTube YPP ads, not clip campaigns. No paid creative service is required, but approval and views are not guaranteed.</p>
+    <div class="apps"><div class="appcard">
+      <span class="applogo" style="background:#7F355E">✦</span>
+      <div class="apptx"><b>Daily original Shorts</b>
+        <span>${esc(status)} · ${st.episodes_published} / ${st.episodes_total} source-verified pilot episodes published · ${esc(st.publish_hour_amman)}:00 Amman</span>
+        <span>${connected.length ? connected.map(a => esc(a.name)).join(", ") : "Connect your YouTube channel above first."}</span>
+        ${st.upload_unknown ? `<span class="warnline">There are ${st.upload_unknown} uncertain uploads. Check YouTube Studio for duplicates before proceeding.</span>` : ""}
+        ${st.error ? `<span class="warnline">${esc(st.error)}</span>` : ""}
+        <span>Offline voice: ${st.voice_configured ? "Installed" : st.voice_auto_setup ? "Auto-download available" : "Not ready"} · Model license: ${st.voice_provider_declared_license ? esc(st.voice_provider_declared_license) + " (publisher-declared)" : st.voice_license_confirmed ? "Custom model approved" : "Unconfirmed"}</span>
+        <span class="sub">Your PeakCut owner ID (for one-time server configuration): <code>${esc(st.owner_id)}</code></span>
+        ${connected.length ? `<span class="sub">Account ID: <code>${esc(connected[0].id)}</code></span>` : ""}
+      </div>
+      <div class="appact"><a class="btn sm" href="https://github.com/saifPHP411/Cutout-Pro/blob/feature/peakcut-original-youtube-autopilot/docs/ORIGINAL_YOUTUBE_AUTOPILOT.md" target="_blank" rel="noopener">Setup guide</a></div>
+    </div></div>
+    <p class="help">Automatic publishing activates only after the account owner links YouTube and explicitly enables the voice, rights, and server flags. This page does not start publishing by itself.</p>
+  </section>`;
+}
+
 async function ytCookiesCard(logo) {
   const st = await api("/api/youtube-cookies").catch(() => null);
   if (!st) return "";
@@ -2729,6 +2842,27 @@ document.addEventListener("click", async e => {
   const a = b.dataset.act, d = b.dataset;
   if (b.tagName === "A") e.preventDefault();
   try {
+    if (a === "autorefresh") return loadOriginalAutopilotView();
+    if (a === "autoenable") {
+      if (!$("#auto_public_consent")?.checked) return toast("Confirm public publishing before enabling.", "bad");
+      const account = $("#auto_account")?.value;
+      const hour = Number($("#auto_hour")?.value || 11);
+      if (!account) return toast("Connect and select your YouTube account first.", "bad");
+      b.disabled = true;
+      try {
+        await send("/api/original-youtube/config",
+                   {enabled:true, account_id:account, hour, confirm_public:true}, "PUT");
+        toast("Automatic YouTube publishing enabled for your channel.", "ok");
+        return loadOriginalAutopilotView();
+      } finally { b.disabled = false; }
+    }
+    if (a === "autodisable") {
+      if (!await ask("Disable automatic YouTube uploads?",
+                     "PeakCut will stop starting new public uploads for this account.", "Disable", true)) return;
+      await send("/api/original-youtube/config", {enabled:false, hour:11}, "PUT");
+      toast("Automatic publishing disabled.", "ok");
+      return loadOriginalAutopilotView();
+    }
     if (a === "morejobs") { S.jobLimit += 12; return drawJobs(); }
     if (a === "moreclips") { S.clipLimit += 24; return drawAllClips(); }
     if (a === "editcampaign") return campaignDialog((S.campaignRows || []).find(c => c.id === d.id));

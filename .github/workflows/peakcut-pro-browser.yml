@@ -1,7 +1,7 @@
 name: PeakCut Pro Browser QA
 on:
   push:
-    branches: [feature/peakcut-pro-smart-highlights]
+    branches: [feature/peakcut-pro-smart-highlights, feature/peakcut-original-youtube-autopilot]
   workflow_dispatch:
   pull_request:
     branches: [main, feature/peakcut-pro-burgundy-studio-ui]
@@ -19,8 +19,14 @@ jobs:
           cache: pip
       - name: Install application and browser dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends ffmpeg fonts-noto-core fonts-noto-cjk
+          # The hosted Ubuntu image already includes FFmpeg on supported
+          # runner revisions. Avoid unnecessary APT mirror downloads for Noto
+          # fonts: Arabic typesetting is verified inside ARM64 Docker separately.
+          if ! command -v ffmpeg >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends ffmpeg
+          fi
+          command -v ffmpeg
           python -m pip install -r requirements.txt
           python -m pip install playwright
           python -m playwright install --with-deps chromium

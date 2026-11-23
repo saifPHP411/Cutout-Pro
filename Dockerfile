@@ -10,8 +10,14 @@ COPY --from=denoland/deno:bin /deno /usr/local/bin/deno
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+# Free offline Arabic voice synthesizer: ARM64 wheel, no external TTS API calls.
+# The voice model itself remains separately licensed and owner-provided.
+RUN pip install --no-cache-dir piper-tts==1.7.0
 COPY studio studio
 COPY web web
+# Reviewed source-original YouTube Shorts scripts and CLI (no credentials).
+COPY content content
+COPY tools tools
 
 ENV PEAKCUT_DATA=/data \
     PEAKCUT_HOST=0.0.0.0 \

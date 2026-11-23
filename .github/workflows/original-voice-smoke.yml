@@ -1,0 +1,37 @@
+name: Original Arabic Voice + Shorts QA (ARM64)
+on:
+  push:
+    branches: [feature/peakcut-original-youtube-autopilot]
+    paths: ['tools/real_voice_smoke.py', '.github/workflows/original-voice-smoke.yml', 'studio/original_voice.py', 'studio/original_shorts.py']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-arabic:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build free offline video and speech pipeline
+        run: |
+          test "$(uname -m)" = aarch64
+          docker build -t peakcut-original:smoke .
+      - name: Verify real Arabic narration and export 1080x1920
+        run: |
+          mkdir -p artifacts/original-science
+          docker run --rm --cpus 2 --memory 8g \
+            -e PEAKCUT_DATA=/tmp/original-science-qa \
+            -e PEAKCUT_ORIGINAL_BUILTIN_VOICE=1 \
+            -v "$PWD/artifacts/original-science:/app/artifacts/original-science" \
+            peakcut-original:smoke python tools/real_voice_smoke.py
+      - name: Preserve source-original spoken Short for review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: real-arabic-voice-short
+          path: |
+            artifacts/original-science/*.mp4
+            artifacts/original-science/*.wav
+            artifacts/original-science/qa.json
+          retention-days: 7
+          if-no-files-found: warn

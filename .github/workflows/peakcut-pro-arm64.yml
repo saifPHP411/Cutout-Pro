@@ -1,7 +1,7 @@
 name: PeakCut Pro ARM64
 on:
   push:
-    branches: [main, feature/peakcut-pro-windsor-followup, feature/peakcut-pro-burgundy-studio-ui, feature/peakcut-pro-smart-highlights]
+    branches: [main, feature/peakcut-pro-windsor-followup, feature/peakcut-pro-burgundy-studio-ui, feature/peakcut-pro-smart-highlights, feature/peakcut-original-youtube-autopilot]
   workflow_dispatch:
   pull_request:
     branches: [main]

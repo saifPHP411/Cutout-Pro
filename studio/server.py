@@ -81,6 +81,9 @@ def _startup():
     jobs.start()
     live.start()
     posting.start()
+    # Separate source-original YouTube pipeline: disabled unless owner explicitly opts in.
+    from . import original_youtube_scheduler
+    original_youtube_scheduler.start()
     threading.Thread(target=alerts.monitor_jobs, daemon=True, name="job-alert-monitor").start()
     from . import updates
     updates.start()                  # looks for a newer PeakCut every minute, in the background
@@ -1769,6 +1772,99 @@ def put_settings(body: dict = Body(...)):
     except (ValueError, TypeError) as e:
         raise HTTPException(400, str(e))
     return accounts.public_settings()
+
+
+@app.get("/api/original-youtube/status")
+def original_youtube_status():
+    """Owner-only overview. No OAuth tokens, API keys or voice files exposed."""
+    from . import original_shorts, original_voice, original_youtube_settings
+    from tools import original_youtube_autopilot as autopilot
+
+    uid = ctx.uid()
+    linked = [a for a in accounts.list_accounts() if a["platform"] == "youtube"]
+    legacy_managed = (config.env("PEAKCUT_ORIGINAL_AUTOPOST", "0") == "1"
+                      and config.env("PEAKCUT_ORIGINAL_USER_ID", "") == uid)
+    channel_config = original_youtube_settings.get(uid)
+    active = legacy_managed or channel_config["enabled"]
+    try:
+        doc = autopilot._read_state(config.user_dir(uid) / autopilot.AUTO_DIR)
+        published = sum(v.get("status") == "published" for v in doc["episodes"].values())
+        pending = sum(v.get("status") == "upload_unknown" for v in doc["episodes"].values())
+        error = ""
+    except (ValueError, RuntimeError, OSError):
+        doc = {"episodes": {}}
+        published, pending, error = 0, 0, "Upload ledger needs attention."
+    expected = (config.env("PEAKCUT_ORIGINAL_YOUTUBE_ACCOUNT", "") if legacy_managed
+                else channel_config["account_id"])
+    model = original_voice.selected_model()
+    piper_ready = bool(shutil.which("piper"))
+    voice = bool(model.is_file() and Path(str(model) + ".json").is_file() and piper_ready)
+    builtin_voice = original_voice.use_builtin(model)
+    voice_autosetup = builtin_voice and piper_ready
+    licensed = original_voice.commercially_allowed(model)
+    episodes = original_shorts.catalog()
+    count = len(episodes)
+    curated_published = sum(doc["episodes"].get(e["id"], {}).get("status") == "published" for e in episodes)
+    dynamic_published = sum(k.startswith("jpl-") and v.get("status") == "published"
+                            for k, v in doc["episodes"].items())
+    live_topics = config.env("PEAKCUT_ORIGINAL_LIVE_JPL", "1") == "1"
+    verified = [v.get("verified_views") for v in doc["episodes"].values()
+                if v.get("status") == "published"]
+    known_views = sum(v for v in verified if isinstance(v, int) and v >= 0)
+    unknown_views = sum(not isinstance(v, int) or v < 0 for v in verified)
+    ready = (active and licensed and (voice or voice_autosetup)
+             and any(a["id"] == expected for a in linked)
+             and not error and (curated_published < count or live_topics))
+    return {"status": "ready" if ready else "setup_needed" if not error else "error",
+            "enabled": active, "managed_by_server": legacy_managed,
+            "opted_in_from_app": channel_config["enabled"], "voice_configured": voice,
+            "voice_auto_setup": voice_autosetup, "voice_provider_declared_license": "MIT" if builtin_voice else "",
+            "voice_license_confirmed": licensed,
+            "owner_id": uid, "selected_account": expected if expected in [a["id"] for a in linked] else "",
+            "youtube_accounts": linked, "episodes_total": count,
+            "episodes": [{"id": e["id"], "title": e["title"], "source": e["source"],
+                          "status": doc.get("episodes", {}).get(e["id"], {}).get("status", "not_started")
+                          if not error else "unknown"} for e in episodes],
+            "episodes_published": curated_published, "curated_remaining": count - curated_published,
+            "total_published": published, "live_episodes_published": dynamic_published,
+            "live_jpl_enabled": live_topics, "live_source_name": "NASA/JPL SBDB",
+            "live_source_url": "https://ssd-api.jpl.nasa.gov/doc/cad.html",
+            "upload_unknown": pending, "error": error,
+            "verified_views": known_views if verified and not unknown_views else None,
+            "known_views": known_views, "views_unavailable_count": unknown_views,
+            "views_last_sync": doc.get("last_views_sync"),
+            "revenue_available": False,
+            "publish_hour_amman": (config.env("PEAKCUT_ORIGINAL_PUBLISH_HOUR_AMMAN", "11")
+                                   if legacy_managed else channel_config["hour"])}
+
+
+@app.put("/api/original-youtube/config")
+def original_youtube_config(body: dict = Body(...)):
+    """Owner consent: store only channel id/time; never accept OAuth secrets."""
+    from . import original_youtube_settings, original_youtube_scheduler
+
+    uid = ctx.uid()
+    _throttle("autopilot-settings:" + uid, 12, 600)
+    if config.env("PEAKCUT_ORIGINAL_AUTOPOST", "0") == "1" and config.env("PEAKCUT_ORIGINAL_USER_ID", "") == uid:
+        raise HTTPException(409, "This channel is managed by the server configuration.")
+    enabled = body.get("enabled")
+    hour = body.get("hour", 11)
+    if type(enabled) is not bool or type(hour) is not int or not 0 <= hour <= 23:
+        raise HTTPException(422, "Choose an enabled state and a valid local publishing hour.")
+    channel = body.get("account_id", "")
+    if enabled:
+        if body.get("confirm_public") is not True:
+            raise HTTPException(422, "Confirm unattended public YouTube uploads for this channel first.")
+        linked = accounts.list_accounts()
+        if not isinstance(channel, str) or not any(a["id"] == channel and a["platform"] == "youtube" for a in linked):
+            raise HTTPException(422, "Connect and select your own YouTube channel first.")
+    try:
+        original_youtube_settings.set_owner(uid, enabled=enabled, account_id=channel, hour=hour)
+        if enabled:
+            original_youtube_scheduler.start()
+    except (ValueError, RuntimeError, OSError) as exc:
+        raise HTTPException(422, str(exc))
+    return original_youtube_status()
 
 
 @app.get("/api/accounts")
