@@ -1805,6 +1805,10 @@ def original_youtube_status():
     dynamic_published = sum(k.startswith("jpl-") and v.get("status") == "published"
                             for k, v in doc["episodes"].items())
     live_topics = config.env("PEAKCUT_ORIGINAL_LIVE_JPL", "1") == "1"
+    verified = [v.get("verified_views") for v in doc["episodes"].values()
+                if v.get("status") == "published"]
+    known_views = sum(v for v in verified if isinstance(v, int) and v >= 0)
+    unknown_views = sum(not isinstance(v, int) or v < 0 for v in verified)
     ready = (active and licensed and (voice or voice_autosetup)
              and any(a["id"] == expected for a in linked)
              and not error and (curated_published < count or live_topics))
@@ -1822,6 +1826,10 @@ def original_youtube_status():
             "live_jpl_enabled": live_topics, "live_source_name": "NASA/JPL SBDB",
             "live_source_url": "https://ssd-api.jpl.nasa.gov/doc/cad.html",
             "upload_unknown": pending, "error": error,
+            "verified_views": known_views if verified and not unknown_views else None,
+            "known_views": known_views, "views_unavailable_count": unknown_views,
+            "views_last_sync": doc.get("last_views_sync"),
+            "revenue_available": False,
             "publish_hour_amman": config.env("PEAKCUT_ORIGINAL_PUBLISH_HOUR_AMMAN", "11")}
 
 
