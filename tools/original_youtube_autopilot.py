@@ -21,7 +21,7 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from studio import accounts, config, ctx, original_shorts, space_data  # noqa: E402
+from studio import accounts, config, ctx, original_shorts, original_voice, space_data  # noqa: E402
 
 AUTO_DIR = "original_youtube"
 AUTO_FLAG = "PEAKCUT_ORIGINAL_AUTOPOST"
@@ -80,11 +80,11 @@ def choose_episode(episodes: list[dict], state: dict, requested: str = "",
     return discover(state, today=today)
 
 
-def require_publishing_config() -> tuple[str, str, Path]:
+def require_publishing_config(voice: Path | None = None) -> tuple[str, str, Path]:
     if os.environ.get(AUTO_FLAG) != "1":
         raise RuntimeError("Autopost is disabled. Explicit PEAKCUT_ORIGINAL_AUTOPOST=1 required.")
-    if os.environ.get(LICENSE_FLAG) != "1":
-        raise RuntimeError("Confirm the chosen voice model permits commercial output before publishing.")
+    if not original_voice.commercially_allowed(voice):
+        raise RuntimeError("Confirm the custom voice model permits commercial output before publishing.")
     uid = os.environ.get("PEAKCUT_ORIGINAL_USER_ID", "").strip()
     account_id = os.environ.get("PEAKCUT_ORIGINAL_YOUTUBE_ACCOUNT", "").strip()
     if not uid or not account_id.startswith("yt_"):
@@ -96,6 +96,8 @@ def render_episode(episode, root: Path, voice: Path) -> Path:
     folder = root / episode["id"]
     folder.mkdir(parents=True, exist_ok=True)
     wav = folder / "narration.wav"
+    if original_voice.use_builtin(voice) and not voice.exists():
+        voice = original_voice.ensure_builtin()
     original_shorts.voice_over(episode["narration"], wav, voice)
     return original_shorts.render(episode, folder, wav)
 
@@ -108,7 +110,7 @@ def publish_once(voice: Path, requested: str = "", *, today: str | None = None):
     """
     import fcntl
 
-    uid, account_id, root = require_publishing_config()
+    uid, account_id, root = require_publishing_config(voice)
     episodes = original_shorts.catalog()
     root.mkdir(parents=True, exist_ok=True)
     now = today or datetime.now(timezone.utc).date().isoformat()
@@ -158,7 +160,7 @@ def run(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("mode", choices=("plan", "preview", "publish"))
     parser.add_argument("--episode", default="", help="Use a specific reviewed episode")
-    parser.add_argument("--voice-model", type=Path, default=Path(os.environ.get("PEAKCUT_ORIGINAL_VOICE_MODEL", "/nonexistent/voice.onnx")))
+    parser.add_argument("--voice-model", type=Path, default=original_voice.selected_model())
     parser.add_argument("--output-dir", type=Path, default=Path("artifacts/original_shorts"))
     args = parser.parse_args(argv)
     episodes = original_shorts.catalog()
