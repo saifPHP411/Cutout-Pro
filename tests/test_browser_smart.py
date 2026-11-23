@@ -25,12 +25,18 @@ SERVER_SCRIPT = r"""
 import shutil
 from pathlib import Path
 from PIL import Image, ImageDraw
-from studio import auth, accounts, config, ctx, jobs, server
+from studio import auth, accounts, config, ctx, jobs, server, original_youtube_scheduler
+# Publication is disabled even when the synthetic in-app approval is clicked.
+# The fixture is a fake channel, has no usable credentials, and never contacts YouTube.
+original_youtube_scheduler.start = lambda: False
 
 @server.app.on_event("startup")
 def seed_browser_fixtures():
     with ctx.as_user(auth.local_user().id):
         accounts.save_settings({"tour_done": True})
+        accounts._put({"id": "yt_synthetic_browser_qa", "platform": "youtube",
+                       "name": "Synthetic QA channel (never uploads)", "added": 0,
+                       "refresh_token": "", "access_token": "", "expires": 0})
         job = jobs.create({"type": "file", "name": "Browser QA — synthetic footage"}, {},
                           enqueue=False)
         folder = Path(job["dir"]) / "clips"
@@ -144,8 +150,20 @@ def visit_and_check(browser, context_options, device):
         expect(page.get_by_text("Pilot episodes remaining")).to_be_visible()
         expect(page.get_by_text("Not publishing")).to_be_visible()
         expect(page.locator(".auto-episode")).to_have_count(4)
+        expect(page.locator("#auto_account")).to_be_visible()
+        expect(page.locator("#auto_public_consent")).not_to_be_checked()
         assert_no_overflow(page)
         page.screenshot(path=str(ARTIFACTS / (device + "-autopilot-home.png")), full_page=True)
+        # One-time human approval from the phone; the backend scheduler is
+        # disabled in this fixture and the fake OAuth record cannot upload.
+        page.locator("#auto_public_consent").check()
+        page.locator('[data-act="autoenable"]').click()
+        expect(page.get_by_text("You authorized publishing", exact=False)).to_be_visible()
+        expect(page.locator('[data-act="autodisable"]')).to_be_visible()
+        page.locator('[data-act="autodisable"]').click()
+        page.locator('#formdlg button[value="yes"]').click()
+        expect(page.locator("#auto_public_consent")).to_be_visible()
+        expect(page.get_by_text("Not publishing")).to_be_visible()
 
         page.goto(BASE + "/app/settings/apps", wait_until="domcontentloaded")
         expect(page.get_by_role("heading", name="Original YouTube Autopilot")).to_be_visible()
