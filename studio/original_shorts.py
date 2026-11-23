@@ -286,10 +286,10 @@ def _scene(episode: dict, index: int, destination: Path):
     _rtl(d, scene["headline"], 969, 1420, 67, PINK, max_width=865)
     _rtl(d, scene["detail"], 960, 1522, 44, WHITE, bold=False, max_width=865)
     _rtl(d, scene["stat"], 950, 1717, 41, (255, 220, 134), max_width=860)
-    d.text((105, 1820), f"{index + 1}/3   ORIGINAL SPACE LAB",
-           font=ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 27)
-           if Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf").is_file() else font(26),
-           fill=DIM)
+    # Use the verified Arabic shaping stack. The optional Latin font on ARM64
+    # can render ASCII channel text as unreadable tofu boxes.
+    _rtl(d, f"مختبر الفضاء • المشهد {index + 1} من 3", 963, 1812, 28,
+         DIM, bold=False, max_width=875)
     canvas.save(destination, optimize=True)
 
 
