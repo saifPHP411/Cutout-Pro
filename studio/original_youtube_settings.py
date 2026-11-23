@@ -77,6 +77,16 @@ def set_owner(uid: str, *, enabled: bool, account_id: str = "", hour: int = 11) 
     return get(uid)
 
 
+def forget(uid: str) -> None:
+    """Drop publication consent when a PeakCut account is deleted."""
+    with _lock:
+        all_rows = _load()
+        if uid in all_rows:
+            del all_rows[uid]
+            _save(all_rows)
+
+
+
 def enabled_owners() -> list[tuple[str, dict]]:
     with _lock:
         all_rows = _load()
