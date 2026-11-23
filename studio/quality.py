@@ -66,6 +66,50 @@ def motion_map(path: str | Path, bucket: float = 2.0) -> list[tuple[float, float
     return [(i * bucket, sum(v) / len(v)) for i, v in sorted(buckets.items())]
 
 
+def sampled_motion_map(path: str | Path, start: float = 0, seconds: float = 600,
+                       fps: int = 1) -> list[tuple[float, float]]:
+    """Cheap, optional visual activity signal from *sampled* low-resolution frames.
+
+    Timestamps are relative to the requested window, suitable for block-local
+    transcript analysis. This is a measure of frame changes, not an AI description
+    of a kill, reaction or other visual event. A 10-minute cap protects CPU-only
+    hosts from unbounded scans. Failure to read a video is non-fatal.
+    """
+    import math
+
+    if not Path(path).is_file() or not all(math.isfinite(v) for v in (start, seconds)):
+        return []
+    if start < 0 or seconds <= 1 or fps not in (1, 2):
+        return []
+    seconds = min(float(seconds), 600.0)
+    try:
+        proc = work_control.run(
+            [_FFMPEG, "-hide_banner", "-loglevel", "error", "-ss", str(start),
+             "-i", str(path), "-t", str(seconds), "-threads", "2", "-filter_threads", "1",
+             "-vf", f"fps={fps},scale=160:-2:flags=fast_bilinear,"
+                    "tblend=all_mode=difference,signalstats,metadata=print:file=-",
+             "-an", "-sn", "-f", "null", "-"],
+            capture_output=True, text=True, timeout=150,
+        )
+    except Exception:  # noqa: BLE001 - an unavailable codec must not stop a video job
+        return []
+    if proc.returncode:
+        return []
+    values: list[tuple[float, float]] = []
+    at = None
+    for line in (proc.stdout or "").splitlines():
+        if found := _PTS.search(line):
+            at = float(found.group(1))
+        elif at is not None and (found := _YAVG.search(line)):
+            movement = float(found.group(1))
+            if math.isfinite(movement) and math.isfinite(at) and 0 <= at <= seconds + 1:
+                values.append((round(at, 2), round(movement, 3)))
+    # tblend's first frame is measured against black, not a preceding real frame.
+    return values[1:]
+
+
+
+
 def static_ranges(path: str | Path, bucket: float = 2.0, threshold: float | None = None,
                   min_seconds: float | None = None) -> list[tuple[float, float]]:
     """The stretches that look like an ad break, a slate or a frozen screen."""

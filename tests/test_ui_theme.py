@@ -28,6 +28,9 @@ check("studio: dynamic views and actions remain present", 'id="view"' in studio 
 check("studio: mobile safe area and touch targets", "safe-area-inset-bottom" in studio and "min-height:44px" in studio)
 check("studio: controls still have visible focus", ".nav-item:focus-visible" in studio)
 check("studio: reduced-motion handling stays enabled", "prefers-reduced-motion:reduce" in studio)
+check("studio: visual triage opt-in", 'id="o_visual_triage"' in studio and 'visual_triage:$("#o_visual_triage").checked' in studio)
+check("studio: clip evidence breakdown", "function clipEvidence(c)" in studio and "AI rating breakdown" in studio)
+check("studio: clip browser filter & sort", 'id="clip-filter"' in studio and 'id="clip-sort"' in studio)
 
 print("ALL PASSED" if not failures else f"{len(failures)} FAILED")
 raise SystemExit(1 if failures else 0)

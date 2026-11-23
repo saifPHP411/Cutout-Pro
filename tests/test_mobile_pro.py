@@ -51,7 +51,7 @@ def run():
             else:
                 raise RuntimeError("The test app did not start.")
             with sync_playwright() as p:
-                browser = p.chromium.launch(executable_path=os.environ.get("PEAKCUT_TEST_CHROMIUM", "/usr/bin/chromium"),
+                browser = p.chromium.launch(executable_path=os.environ.get("PEAKCUT_TEST_CHROMIUM") or p.chromium.executable_path,
                                             args=["--no-sandbox", "--disable-dev-shm-usage"])
                 page = browser.new_page(**p.devices["Pixel 7"])
                 errors = []

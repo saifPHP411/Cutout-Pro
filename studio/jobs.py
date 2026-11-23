@@ -140,7 +140,7 @@ on_clip_ready: list = []   # callbacks (job, clip), run once when a clip first f
 
 DEFAULTS = {"max_clips": 6, "min_len": 15, "max_len": 60, "style": "bounce", "layout": "blur", "quality": 720,
             "range_start": None, "range_end": None, "captions": True, "hook_text": "", "description_text": "",
-            "lang": "en", "mode": "balanced", "aspect": "9:16", "caption_mode": "original", "template": "", "campaign": "", "priority": 0, "safe_zone": "none", "experiment": False}   # lang: the language spoken
+            "lang": "en", "mode": "balanced", "aspect": "9:16", "caption_mode": "original", "template": "", "campaign": "", "priority": 0, "safe_zone": "none", "experiment": False, "visual_triage": False}   # lang: the language spoken
 
 
 LIMITS = {"max_clips": (1, 20), "min_len": (5, 120), "max_len": (10, 180), "quality": (360, 1080), "priority": (0, 1)}
@@ -150,9 +150,9 @@ def clean_options(options) -> dict:
     """Only known settings, each inside its allowed range. Raises ValueError on nonsense."""
     out = {}
     for k, v in (options if isinstance(options, dict) else {}).items():
-        if k in ("captions", "experiment"):
+        if k in ("captions", "experiment", "visual_triage"):
             if not isinstance(v, bool):
-                raise ValueError("Captions must be on or off.")
+                raise ValueError("Captions must be on or off." if k == "captions" else "This option must be on or off.")
             out[k] = v
             continue
         if k in ("hook_text", "description_text"):     # kept even when empty: it clears the creator's own text for this video
@@ -1186,10 +1186,23 @@ def _process_job(job, pool):
         quota = max(1, math.ceil(left / (len(blocks) - bi)))
         s0 = int((a - lo) / 16000)
         levels = db[s0:s0 + int((b - a) / 16000) + 1]
+        # Opt-in, low-resolution visual triage. Only inspect an already-local source,
+        # and at most this 10-minute block. Audio-only long URL jobs remain supported.
+        motion = []
+        if o.get("visual_triage"):
+            video = Path(job["source_path"]) if job.get("source_path") and not pieces else None
+            if video and video.is_file():
+                with _measure(job, "visual"):
+                    motion = quality.sampled_motion_map(video, start=a / 16000, seconds=(b - a) / 16000)
+                if not motion and bi == 0:
+                    notes.append("Visual motion samples were unavailable. Ranking used speech and audio.")
+            elif bi == 0:
+                notes.append("Visual motion scan needs a locally available video; this audio-only job used speech and audio.")
         profile = ai.current()
         analysis_key = cache.digest(bw, levels.tobytes(), (b - a) / 16000, job["title"], job["uploader"],
                                     quota, o["min_len"], o["max_len"], game, profile["provider"], profile["models"],
-                                    ai.base_url(), brain.RANK_VERSION, (job.get("experiment") or {}).get("version") or learning.active()[1], job.get("chat_samples"))
+                                    ai.base_url(), brain.RANK_VERSION, (job.get("experiment") or {}).get("version") or learning.active()[1],
+                                    job.get("chat_samples"), bool(o.get("visual_triage")), motion)
         saved = cache.read("analysis", analysis_key) if config.ai_ready() else None
         if saved:
             found, analysis = saved
@@ -1198,7 +1211,8 @@ def _process_job(job, pool):
             with _measure(job, "analyzing"):
                 found, analysis = brain.find_clips(bw, levels, (b - a) / 16000, job["title"], job["uploader"],
                                                    quota, int(o["min_len"]), int(o["max_len"]), notes.append, game=game,
-                                                   chat=reactions.signal(job.get("chat_samples"), shift), ranking=job.get("experiment"))
+                                                   chat=reactions.signal(job.get("chat_samples"), shift), ranking=job.get("experiment"),
+                                                   motion=motion)
             if analysis.get("model") and not analysis.get("partial"):
                 cache.write("analysis", analysis_key, [found, analysis])
             tokens += analysis.get("tokens", 0)
