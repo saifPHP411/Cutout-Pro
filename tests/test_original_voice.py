@@ -6,10 +6,13 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+import math
+import wave
+import numpy as np
 
 sys.path.insert(0, ".")
 os.environ["PEAKCUT_DATA"] = tempfile.mkdtemp(prefix="pc-voice-bootstrap-")
-from studio import original_voice  # noqa: E402
+from studio import original_shorts, original_voice  # noqa: E402
 
 class VoiceBootstrapTests(unittest.TestCase):
     def test_builtin_requires_fixed_repository_and_has_documented_license(self):
@@ -71,6 +74,43 @@ class VoiceBootstrapTests(unittest.TestCase):
                                      "PEAKCUT_ORIGINAL_VOICE_LICENSE_APPROVED": "0"}):
             self.assertTrue(original_voice.commercially_allowed(original_voice.default_model()))
             self.assertFalse(original_voice.commercially_allowed(Path("/tmp/custom.onnx")))
+
+
+    def test_narration_audio_gate_rejects_silence_and_accepts_real_waveform(self):
+        from types import SimpleNamespace
+        with tempfile.TemporaryDirectory(prefix="pc-audio-gate-") as root:
+            folder = Path(root)
+            model = folder / "voice.onnx"
+            model.write_bytes(b"placeholder")
+            (folder / "voice.onnx.json").write_text("{}")
+            destination = folder / "narration.wav"
+            def silent(*_args, **_kwargs):
+                with wave.open(str(destination), "wb") as f:
+                    f.setnchannels(1)
+                    f.setsampwidth(2)
+                    f.setframerate(16000)
+                    f.writeframes(b"\\x00\\x00" * (16000 * 4))
+                return SimpleNamespace(returncode=0)
+            with patch.object(original_shorts.shutil, "which", return_value="piper"), \
+                 patch.object(original_shorts.subprocess, "run", side_effect=silent):
+                with self.assertRaisesRegex(RuntimeError, "quality gate"):
+                    original_shorts.voice_over("نص عربي للاختبار", destination, model)
+                self.assertFalse(destination.exists())
+
+            def spoken(*_args, **_kwargs):
+                t = np.arange(16000 * 4, dtype=np.float64) / 16000
+                audio = (2500 * np.sin(2 * math.pi * 260 * t)).astype("<i2")
+                with wave.open(str(destination), "wb") as f:
+                    f.setnchannels(1)
+                    f.setsampwidth(2)
+                    f.setframerate(16000)
+                    f.writeframes(audio.tobytes())
+                return SimpleNamespace(returncode=0)
+            with patch.object(original_shorts.shutil, "which", return_value="piper"), \
+                 patch.object(original_shorts.subprocess, "run", side_effect=spoken):
+                original_shorts.voice_over("نص عربي للاختبار", destination, model)
+                self.assertTrue(destination.is_file())
+
 
 if __name__ == "__main__":
     unittest.main()
