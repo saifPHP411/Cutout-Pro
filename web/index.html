@@ -2515,10 +2515,35 @@ async function drawSettings() {
           ${card("youtube", "YouTube", yt, "#FF0000", "Post clips to your channel as Shorts.")}
           ${card("instagram", "Instagram", ig, "linear-gradient(45deg,#F58529,#DD2A7B,#8134AF)", "Post clips as Reels. Needs a Creator or Business account.")}
           ${card("tiktok", "TikTok", tt, "#000", "Post clips straight to your TikTok.")}
-        </div></section>${admin ? await ytCookiesCard(yt) : ""}`;
+        </div></section>${await originalChannelStatusCard()}${admin ? await ytCookiesCard(yt) : ""}`;
     }
   } catch (e) { body.innerHTML = `<div class="set-load">${esc(e.message)}</div>`; }
 }
+async function originalChannelStatusCard() {
+  const st = await api("/api/original-youtube/status").catch(() => null);
+  if (!st) return "";
+  const connected = st.youtube_accounts || [];
+  const status = st.enabled ? (st.status === "ready" ? "Enabled" : "Check setup") : "Off until enabled";
+  return `<section class="set-sec original-channel">
+    <h2>Original YouTube Autopilot</h2>
+    <p class="help">A separate, campaign-free channel for Arabic space explainers. Original science diagrams and offline narration; the intended income is YouTube YPP ads, not clip campaigns. No paid creative service is required, but approval and views are not guaranteed.</p>
+    <div class="apps"><div class="appcard">
+      <span class="applogo" style="background:#7F355E">✦</span>
+      <div class="apptx"><b>Daily original Shorts</b>
+        <span>${esc(status)} · ${st.episodes_published} / ${st.episodes_total} source-verified pilot episodes published · ${esc(st.publish_hour_amman)}:00 Amman</span>
+        <span>${connected.length ? connected.map(a => esc(a.name)).join(", ") : "Connect your YouTube channel above first."}</span>
+        ${st.upload_unknown ? `<span class="warnline">There are ${st.upload_unknown} uncertain uploads. Check YouTube Studio for duplicates before proceeding.</span>` : ""}
+        ${st.error ? `<span class="warnline">${esc(st.error)}</span>` : ""}
+        <span>Voice file: ${st.voice_configured ? "Configured" : "Missing"} · Commercial voice permission: ${st.voice_license_confirmed ? "Confirmed" : "Not confirmed"}</span>
+        <span class="sub">Your PeakCut owner ID (for one-time server configuration): <code>${esc(st.owner_id)}</code></span>
+        ${connected.length ? `<span class="sub">Account ID: <code>${esc(connected[0].id)}</code></span>` : ""}
+      </div>
+      <div class="appact"><a class="btn sm" href="https://github.com/saifPHP411/Cutout-Pro/blob/feature/peakcut-original-youtube-autopilot/docs/ORIGINAL_YOUTUBE_AUTOPILOT.md" target="_blank" rel="noopener">Setup guide</a></div>
+    </div></div>
+    <p class="help">Automatic publishing activates only after the account owner links YouTube and explicitly enables the voice, rights, and server flags. This page does not start publishing by itself.</p>
+  </section>`;
+}
+
 async function ytCookiesCard(logo) {
   const st = await api("/api/youtube-cookies").catch(() => null);
   if (!st) return "";
