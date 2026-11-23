@@ -75,11 +75,15 @@ PEAKCUT_ORIGINAL_VOICE_MODEL=/data/voices/arabic.onnx
 PEAKCUT_ORIGINAL_USER_ID=<actual-owning-PeakCut-user-id>
 PEAKCUT_ORIGINAL_YOUTUBE_ACCOUNT=yt_<actual-channel-id>
 ```
-The launch command is
+Manual one-shot command:
 `python tools/original_youtube_autopilot.py publish`.
 
-Run it once per day using a systemd timer or server cron, **after** the
-existing app has stable storage and OAuth. The renderer creates source-
+When PeakCut starts, its opt-in scheduler automatically checks once each day
+at **11 AM Asia/Amman** (overridable with `PEAKCUT_ORIGINAL_PUBLISH_HOUR_AMMAN`).
+No separate cron, subscription or GitHub Action is required. To run one check
+manually, use `python tools/original_youtube_autopilot.py publish` after
+configuring the same environment and OAuth. The production service must
+restart after those settings are set. The renderer creates source-
 original 1080×1920 Shorts and posts to the *explicit connected YouTube
 account* in the Education category. No campaign, third-party clips or
 Windsor.ai are required. It never chooses a random remote clip.
