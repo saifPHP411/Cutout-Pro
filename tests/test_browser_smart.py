@@ -96,6 +96,12 @@ def visit_and_check(browser, context_options, device):
         assert not checkbox.is_checked(), "Visual Highlights must be disabled by default"
         checkbox.check()
         assert page.evaluate("jobOptions().visual_triage") is True
+        # The opt-in description wraps to multiple lines on narrow Android screens.
+        toggle_row = page.locator(".visual-triage-toggle")
+        expect(toggle_row).to_be_visible()
+        assert toggle_row.evaluate("(el) => el.scrollHeight <= el.clientHeight + 2"), (
+            "Visual Highlights description overflowed its own toggle label"
+        )
         # Desktop uses a short grid-height transition; capture only after it settles.
         page.wait_for_timeout(400)
         assert_no_overflow(page)
