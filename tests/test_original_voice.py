@@ -89,7 +89,7 @@ class VoiceBootstrapTests(unittest.TestCase):
                     f.setnchannels(1)
                     f.setsampwidth(2)
                     f.setframerate(16000)
-                    f.writeframes(b"\\x00\\x00" * (16000 * 4))
+                    f.writeframes(b"\x00\x00" * (16000 * 4))
                 return SimpleNamespace(returncode=0)
             with patch.object(original_shorts.shutil, "which", return_value="piper"), \
                  patch.object(original_shorts.subprocess, "run", side_effect=silent):
