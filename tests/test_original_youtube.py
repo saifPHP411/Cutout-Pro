@@ -8,6 +8,8 @@ import unittest
 import wave
 from pathlib import Path
 from unittest.mock import patch
+import numpy as np
+from PIL import Image
 
 sys.path.insert(0, ".")
 os.environ["PEAKCUT_DATA"] = tempfile.mkdtemp(prefix="pc-original-science-")
@@ -55,6 +57,13 @@ class OriginalYouTubeTests(unittest.TestCase):
             self.assertTrue(path.is_file())
             self.assertGreater(path.stat().st_size, 4096)
             self.assertTrue((dst / "space-light-delay-scene-0.png").is_file())
+            diagrams = []
+            for i in range(3):
+                with Image.open(dst / f"space-light-delay-scene-{i}.png") as frame:
+                    diagrams.append(np.asarray(frame.crop((110, 690, 990, 1320)).convert("RGB"), dtype=np.int16))
+            for a, b in zip(diagrams, diagrams[1:]):
+                different = float(np.mean(np.max(np.abs(a - b), axis=2) > 32))
+                self.assertGreater(different, 0.06, "Scenes must explain different concepts visually")
             self.assertEqual(original_shorts._duration(wav), 4.0)
 
     def test_publish_once_never_double_uploads_or_crosses_account(self):
