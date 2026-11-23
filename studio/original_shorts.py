@@ -288,7 +288,7 @@ def _scene(episode: dict, index: int, destination: Path):
     _rtl(d, scene["stat"], 950, 1717, 41, (255, 220, 134), max_width=860)
     # Use the verified Arabic shaping stack. The optional Latin font on ARM64
     # can render ASCII channel text as unreadable tofu boxes.
-    _rtl(d, f"مختبر الفضاء • المشهد {index + 1} من 3", 963, 1812, 28,
+    _rtl(d, f"مختبر الفضاء، المشهد {index + 1} من 3", 963, 1812, 28,
          DIM, bold=False, max_width=875)
     canvas.save(destination, optimize=True)
 
