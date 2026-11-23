@@ -1795,12 +1795,16 @@ def original_youtube_status():
     model = config.env("PEAKCUT_ORIGINAL_VOICE_MODEL", "")
     voice = bool(model and Path(model).is_file() and Path(model + ".json").is_file() and shutil.which("piper"))
     licensed = config.env("PEAKCUT_ORIGINAL_VOICE_LICENSE_APPROVED", "0") == "1"
-    count = len(original_shorts.catalog())
+    episodes = original_shorts.catalog()
+    count = len(episodes)
     ready = active and licensed and voice and any(a["id"] == expected for a in linked) and not error and published < count
     return {"status": "ready" if ready else "setup_needed" if not error else "error",
             "enabled": active, "voice_configured": voice, "voice_license_confirmed": licensed,
             "owner_id": uid, "selected_account": expected if expected in [a["id"] for a in linked] else "",
             "youtube_accounts": linked, "episodes_total": count,
+            "episodes": [{"id": e["id"], "title": e["title"], "source": e["source"],
+                          "status": doc.get("episodes", {}).get(e["id"], {}).get("status", "not_started")
+                          if not error else "unknown"} for e in episodes],
             "episodes_published": published, "upload_unknown": pending,
             "error": error, "publish_hour_amman": config.env("PEAKCUT_ORIGINAL_PUBLISH_HOUR_AMMAN", "11")}
 
