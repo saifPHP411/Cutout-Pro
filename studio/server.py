@@ -1777,7 +1777,7 @@ def put_settings(body: dict = Body(...)):
 @app.get("/api/original-youtube/status")
 def original_youtube_status():
     """Owner-only overview. No OAuth tokens, API keys or voice files exposed."""
-    from . import original_shorts
+    from . import original_shorts, original_voice
     from tools import original_youtube_autopilot as autopilot
 
     uid = ctx.uid()
@@ -1793,19 +1793,25 @@ def original_youtube_status():
         doc = {"episodes": {}}
         published, pending, error = 0, 0, "Upload ledger needs attention."
     expected = config.env("PEAKCUT_ORIGINAL_YOUTUBE_ACCOUNT", "")
-    model = config.env("PEAKCUT_ORIGINAL_VOICE_MODEL", "")
-    voice = bool(model and Path(model).is_file() and Path(model + ".json").is_file() and shutil.which("piper"))
-    licensed = config.env("PEAKCUT_ORIGINAL_VOICE_LICENSE_APPROVED", "0") == "1"
+    model = original_voice.selected_model()
+    piper_ready = bool(shutil.which("piper"))
+    voice = bool(model.is_file() and Path(str(model) + ".json").is_file() and piper_ready)
+    builtin_voice = original_voice.use_builtin(model)
+    voice_autosetup = builtin_voice and piper_ready
+    licensed = original_voice.commercially_allowed(model)
     episodes = original_shorts.catalog()
     count = len(episodes)
     curated_published = sum(doc["episodes"].get(e["id"], {}).get("status") == "published" for e in episodes)
     dynamic_published = sum(k.startswith("jpl-") and v.get("status") == "published"
                             for k, v in doc["episodes"].items())
     live_topics = config.env("PEAKCUT_ORIGINAL_LIVE_JPL", "1") == "1"
-    ready = (active and licensed and voice and any(a["id"] == expected for a in linked)
+    ready = (active and licensed and (voice or voice_autosetup)
+             and any(a["id"] == expected for a in linked)
              and not error and (curated_published < count or live_topics))
     return {"status": "ready" if ready else "setup_needed" if not error else "error",
-            "enabled": active, "voice_configured": voice, "voice_license_confirmed": licensed,
+            "enabled": active, "voice_configured": voice,
+            "voice_auto_setup": voice_autosetup, "voice_provider_declared_license": "MIT" if builtin_voice else "",
+            "voice_license_confirmed": licensed,
             "owner_id": uid, "selected_account": expected if expected in [a["id"] for a in linked] else "",
             "youtube_accounts": linked, "episodes_total": count,
             "episodes": [{"id": e["id"], "title": e["title"], "source": e["source"],
