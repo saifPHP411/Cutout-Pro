@@ -29,3 +29,19 @@ jobs:
             -v "$PWD/tests:/app/tests:ro" \
             -v "$RUNNER_TEMP/peakcut-test-git:/app/.git:ro" \
             peakcut-pro-arm64:test python tests/run.py
+
+      - name: Benchmark optional visual scan on 2 OCPU synthetic footage
+        run: |
+          mkdir -p artifacts
+          docker run --rm --network none --cpus 2 --memory 8g \
+            -e PEAKCUT_FETCH_MODEL=0 -e PEAKCUT_DATA=/tmp/peakcut-motion-bench \
+            -v "$PWD/tests:/app/tests:ro" -v "$PWD/artifacts:/app/artifacts" \
+            peakcut-pro-arm64:test python tests/benchmark_visual_triage.py --output /app/artifacts/smart-motion.json
+      - name: Upload measured ARM64 scan overhead
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: peakcut-arm64-motion-benchmark
+          path: artifacts/smart-motion.json
+          retention-days: 7
+          if-no-files-found: warn
