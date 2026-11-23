@@ -139,6 +139,14 @@ def visit_and_check(browser, context_options, device):
         expect(page.get_by_text("Low-score review example", exact=True)).to_be_visible()
         assert_no_overflow(page)
 
+        page.goto(BASE + "/app/autopilot", wait_until="domcontentloaded")
+        expect(page.get_by_role("heading", name="Original Arabic science Shorts")).to_be_visible()
+        expect(page.get_by_text("Pilot episodes remaining")).to_be_visible()
+        expect(page.get_by_text("Not publishing")).to_be_visible()
+        expect(page.locator(".auto-episode")).to_have_count(4)
+        assert_no_overflow(page)
+        page.screenshot(path=str(ARTIFACTS / (device + "-autopilot-home.png")), full_page=True)
+
         page.goto(BASE + "/app/settings/apps", wait_until="domcontentloaded")
         expect(page.get_by_role("heading", name="Original YouTube Autopilot")).to_be_visible()
         expect(page.get_by_text("Off until enabled")).to_be_visible()
