@@ -1774,6 +1774,36 @@ def put_settings(body: dict = Body(...)):
     return accounts.public_settings()
 
 
+@app.get("/api/original-youtube/status")
+def original_youtube_status():
+    """Owner-only overview. No OAuth tokens, API keys or voice files exposed."""
+    from . import original_shorts
+    from tools import original_youtube_autopilot as autopilot
+
+    uid = ctx.uid()
+    linked = [a for a in accounts.list_accounts() if a["platform"] == "youtube"]
+    active = (config.env("PEAKCUT_ORIGINAL_AUTOPOST", "0") == "1"
+              and config.env("PEAKCUT_ORIGINAL_USER_ID", "") == uid)
+    try:
+        doc = autopilot._read_state(config.user_dir(uid) / autopilot.AUTO_DIR)
+        published = sum(v.get("status") == "published" for v in doc["episodes"].values())
+        pending = sum(v.get("status") == "upload_unknown" for v in doc["episodes"].values())
+        error = ""
+    except (ValueError, RuntimeError, OSError):
+        published, pending, error = 0, 0, "Upload ledger needs attention."
+    expected = config.env("PEAKCUT_ORIGINAL_YOUTUBE_ACCOUNT", "")
+    voice = bool(config.env("PEAKCUT_ORIGINAL_VOICE_MODEL", ""))
+    licensed = config.env("PEAKCUT_ORIGINAL_VOICE_LICENSE_APPROVED", "0") == "1"
+    count = len(original_shorts.catalog())
+    ready = active and licensed and voice and any(a["id"] == expected for a in linked) and not error and published < count
+    return {"status": "ready" if ready else "setup_needed" if not error else "error",
+            "enabled": active, "voice_configured": voice, "voice_license_confirmed": licensed,
+            "owner_id": uid, "selected_account": expected if expected in [a["id"] for a in linked] else "",
+            "youtube_accounts": linked, "episodes_total": count,
+            "episodes_published": published, "upload_unknown": pending,
+            "error": error, "publish_hour_amman": config.env("PEAKCUT_ORIGINAL_PUBLISH_HOUR_AMMAN", "11")}
+
+
 @app.get("/api/accounts")
 def list_accounts():
     return accounts.list_accounts()
