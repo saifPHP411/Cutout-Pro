@@ -17,11 +17,11 @@ import json
 import os
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from studio import accounts, config, ctx, original_shorts  # noqa: E402
+from studio import accounts, config, ctx, original_shorts, space_data  # noqa: E402
 
 AUTO_DIR = "original_youtube"
 AUTO_FLAG = "PEAKCUT_ORIGINAL_AUTOPOST"
@@ -63,6 +63,23 @@ def pick(episodes: list[dict], state: dict, requested: str = "") -> dict | None:
     return None
 
 
+def choose_episode(episodes: list[dict], state: dict, requested: str = "",
+                   *, today: date | None = None, discover=None) -> dict | None:
+    """Prefer distinct reviewed explainers. Then use source-validated JPL events.
+
+    The JPL feed is never asked to invent an explanation: all narration comes
+    from numeric measurements and fixed, meaning-preserving Arabic templates.
+    The feed is rate-limited to one fresh asteroid per 10 days.
+    """
+    fixed = pick(episodes, state, requested)
+    if fixed is not None or requested:
+        return fixed
+    if os.environ.get("PEAKCUT_ORIGINAL_LIVE_JPL", "1") != "1":
+        return None
+    discover = discover or space_data.discover_unused
+    return discover(state, today=today)
+
+
 def require_publishing_config() -> tuple[str, str, Path]:
     if os.environ.get(AUTO_FLAG) != "1":
         raise RuntimeError("Autopost is disabled. Explicit PEAKCUT_ORIGINAL_AUTOPOST=1 required.")
@@ -100,9 +117,14 @@ def publish_once(voice: Path, requested: str = "", *, today: str | None = None):
         state = _read_state(root)
         if state.get("last_post_utc") == now or state.get("last_attempt_utc") == now:
             return {"status": "daily_limit", "date": now}
-        episode = pick(episodes, state, requested)
+        try:
+            episode = choose_episode(episodes, state, requested,
+                                     today=date.fromisoformat(now))
+        except (ValueError, RuntimeError, OSError, TimeoutError, json.JSONDecodeError) as exc:
+            # A missing or changed NASA/JPL result never creates an invented video.
+            return {"status": "source_unavailable", "reason": type(exc).__name__}
         if not episode:
-            return {"status": "catalog_exhausted", "remaining": 0}
+            return {"status": "no_new_verified_topic", "remaining": 0}
         with ctx.as_user(uid):
             account = accounts.get(account_id)
             if not account or account.get("platform") != "youtube":
@@ -112,7 +134,9 @@ def publish_once(voice: Path, requested: str = "", *, today: str | None = None):
             # crashes mid-request, operator can reconcile by remote video ID
             # rather than accidentally uploading a duplicate.
             state["episodes"][episode["id"]] = {"status": "upload_unknown", "started": time.time(),
-                                                  "title": episode["title"]}
+                                                  "title": episode["title"],
+                                                  "source": episode["source"],
+                                                  "source_designation": episode.get("data", {}).get("des", "")}
             state["last_attempt_utc"] = now
             _write_state(root, state)
             try:
@@ -140,6 +164,7 @@ def run(argv=None):
     episodes = original_shorts.catalog()
     if args.mode == "plan":
         print(json.dumps({"channel": "Space Lab Arabic", "monetization": "YouTube YPP when eligible",
+                          "additional_topics": "NASA/JPL validated approaches: max 1 per 10 days",
                           "paid_services": [], "planned_topics": [
                               {"id": e["id"], "title": e["title"], "source": e["source"]}
                               for e in episodes], "autopost_default": "off"},
